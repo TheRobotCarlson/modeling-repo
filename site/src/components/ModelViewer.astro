@@ -1,0 +1,37 @@
+---
+import { dataUrl, grams, projectOf, readData, type Manifest } from '../lib/site';
+const { assembly, project, height = 440, spin = true } = Astro.props as {
+  assembly: string; project?: string; height?: number; spin?: boolean;
+};
+const slug = projectOf(Astro, project);
+const m = readData<Manifest>(slug, 'cad', assembly, 'manifest.json');
+const explodes = m.parts.some((p) => p.explode_mm.some((v) => v !== 0));
+---
+<figure class="viewer" data-viewer data-base={dataUrl(slug, 'cad', assembly) + '/'} data-spin={String(spin)}>
+  <div class="viewer-stage" style={`height:${height}px`}>
+    <canvas aria-label={`3D model: ${m.title}`}></canvas>
+    <div class="viewer-hover" hidden></div>
+    <div class="viewer-info" hidden>
+      <button class="viewer-close" aria-label="Close">×</button>
+      <p class="viewer-info-name"></p>
+      <p class="viewer-info-meta"></p>
+      <p class="viewer-info-desc"></p>
+    </div>
+    <p class="viewer-status">Loading model…</p>
+  </div>
+  <div class="viewer-bar">
+    <button data-act="spin" aria-pressed={spin}>{spin ? 'Pause' : 'Spin'}</button>
+    <button data-act="reset">Reset view</button>
+    {explodes && (
+      <label class="viewer-explode">Take apart
+        <input type="range" min="0" max="1" step="0.01" value="0" data-act="explode" />
+      </label>
+    )}
+    <span class="viewer-meta">{m.parts.length} parts · {grams(m.mass_g)} · {m.size_mm.map((v) => v.toFixed(0)).join(' × ')} mm</span>
+  </div>
+  <figcaption>{m.title}. Drag to turn, scroll to zoom, click a part for its mass and job.</figcaption>
+</figure>
+
+<script>
+  import '../scripts/viewer.ts';
+</script>

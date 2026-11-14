@@ -1,0 +1,27 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { SITE_TITLE, pagesOf, url } from '../lib/site';
+
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order || a.id.localeCompare(b.id));
+const cards = await Promise.all(projects.map(async (p) => ({ p, pages: await pagesOf(p.id) })));
+---
+<Base description="Models explained part by part: CAD, physics and electronics.">
+  <main id="main" class="home">
+    <h1>{SITE_TITLE}</h1>
+    <p class="lead">Each project is a model explained part by part: the geometry, the physics behind it, and the parts to buy.</p>
+    <ul class="cards">
+      {cards.map(({ p, pages }) => (
+        <li>
+          <a class="card" href={url(`/${p.id}/`)}>
+            <span class={`status status-${p.data.status}`}>{p.data.status}</span>
+            <h2>{p.data.title}</h2>
+            <p>{p.data.summary}</p>
+            <span class="card-meta">{pages.length} {pages.length === 1 ? 'page' : 'pages'}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+    {cards.length === 0 && <p>No projects yet. Run <code>uv run modelkit new &lt;slug&gt;</code>.</p>}
+  </main>
+</Base>

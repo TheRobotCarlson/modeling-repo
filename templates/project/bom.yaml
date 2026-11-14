@@ -1,0 +1,21 @@
+# Bill of materials. One row per line item. Leave mpn/unit_cost empty until a
+# real part is chosen — the site flags those rows as "to select".
+currency: USD
+items:
+  - ref: post
+    description: Aluminium round rod, 12 mm x 70 mm
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Cut from stock.
+  - ref: fasteners
+    description: M4 x 12 socket head cap screw
+    qty: 4
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:

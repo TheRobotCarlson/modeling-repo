@@ -1,0 +1,36 @@
+---
+import { getEntry } from 'astro:content';
+import { projectOf } from '../lib/site';
+const { project } = Astro.props as { project?: string };
+const slug = projectOf(Astro, project);
+const bom = await getEntry('boms', slug);
+if (!bom) throw new Error(`projects/${slug}/bom.yaml not found`);
+const { items, currency } = bom.data;
+const money = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(v);
+const total = items.reduce((s, i) => s + (i.unit_cost ?? 0) * i.qty, 0);
+const open = items.filter((i) => !i.mpn || i.unit_cost == null).length;
+---
+<div class="table-wrap wide">
+  <table>
+    <thead>
+      <tr><th>Ref</th><th>Description</th><th class="num">Qty</th><th>Manufacturer</th><th>Part number</th><th>Supplier</th><th class="num">Each</th><th class="num">Total</th></tr>
+    </thead>
+    <tbody>
+      {items.map((i) => (
+        <tr>
+          <td class="mono">{i.ref}</td>
+          <td>{i.description}{i.notes && <span class="dim"> — {i.notes}</span>}</td>
+          <td class="num">{i.qty}</td>
+          <td>{i.manufacturer || '—'}</td>
+          <td class="mono">{i.mpn || <span class="tag">to select</span>}</td>
+          <td>{i.url ? <a href={i.url}>{i.supplier || 'link'}</a> : i.supplier || '—'}</td>
+          <td class="num">{i.unit_cost != null ? money(i.unit_cost) : '—'}</td>
+          <td class="num">{i.unit_cost != null ? money(i.unit_cost * i.qty) : '—'}</td>
+        </tr>
+      ))}
+    </tbody>
+    <tfoot>
+      <tr><td colspan="7">Priced so far{open > 0 && ` (${open} of ${items.length} rows still open)`}</td><td class="num">{money(total)}</td></tr>
+    </tfoot>
+  </table>
+</div>

@@ -1,0 +1,123 @@
+---
+// Line chart of a modelkit sim file, drawn at build time. Hover adds a crosshair and readout.
+import { projectOf, readData, type SimData } from '../lib/site';
+const { sim, project } = Astro.props as { sim: string; project?: string };
+const d = readData<SimData>(projectOf(Astro, project), 'sim', `${sim}.json`);
+if (d.series.length > 3) throw new Error(`<Chart sim="${sim}">: ${d.series.length} series; split into several charts (max 3 per chart).`);
+
+const W = 720, H = 320, m = { t: 14, r: 16, b: 40, l: 52 };
+const pw = W - m.l - m.r, ph = H - m.t - m.b;
+
+function ticks(lo: number, hi: number, n: number) {
+  const span = hi - lo || 1;
+  const raw = span / n;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((k) => k * mag).find((s) => s >= raw)!;
+  const a = Math.floor(lo / step) * step, b = Math.ceil(hi / step) * step;
+  const out: number[] = [];
+  for (let v = a; v <= b + step / 2; v += step) out.push(Number(v.toPrecision(12)));
+  return out;
+}
+const ys = d.series.flatMap((s) => s.y);
+const yt = ticks(Math.min(...ys, 0), Math.max(...ys), 5);
+const xt = ticks(d.x[0], d.x[d.x.length - 1], 6).filter((v) => v >= d.x[0] && v <= d.x[d.x.length - 1]);
+const [x0, x1] = [d.x[0], d.x[d.x.length - 1]];
+const [y0, y1] = [yt[0], yt[yt.length - 1]];
+const sx = (v: number) => m.l + ((v - x0) / (x1 - x0)) * pw;
+const sy = (v: number) => m.t + ph - ((v - y0) / (y1 - y0)) * ph;
+const fmt = (v: number) => String(Number(v.toPrecision(6)));
+const path = (y: number[]) => y.map((v, i) => `${i ? 'L' : 'M'}${sx(d.x[i]).toFixed(1)} ${sy(v).toFixed(1)}`).join('');
+const step = Math.max(1, Math.round(d.x.length / 12));
+const payload = { x: d.x, series: d.series, x0, x1, y0, y1, m, W, H, xl: d.x_label };
+---
+<figure class="chart viz-root" data-chart>
+  {d.title && <p class="chart-title">{d.title}</p>}
+  {d.series.length > 1 && (
+    <ul class="chart-legend">
+      {d.series.map((s, i) => <li><span class="chart-key" style={`background:var(--series-${i + 1})`} />{s.name}</li>)}
+    </ul>
+  )}
+  <div class="chart-plot">
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${d.title || d.name}: ${d.series.map((s) => s.name).join(', ')} against ${d.x_label}`}>
+      {yt.map((v) => (
+        <g>
+          <line class={v === 0 ? 'chart-zero' : 'chart-grid'} x1={m.l} x2={W - m.r} y1={sy(v)} y2={sy(v)} />
+          <text class="chart-tick" x={m.l - 8} y={sy(v)} dy="0.32em" text-anchor="end">{fmt(v)}</text>
+        </g>
+      ))}
+      {xt.map((v) => <text class="chart-tick" x={sx(v)} y={H - m.b + 18} text-anchor="middle">{fmt(v)}</text>)}
+      <text class="chart-axis" x={m.l + pw / 2} y={H - 4} text-anchor="middle">{d.x_label}</text>
+      <text class="chart-axis" transform={`translate(12 ${m.t + ph / 2}) rotate(-90)`} text-anchor="middle">{d.y_label}</text>
+      {d.series.map((s, i) => <path class="chart-line" d={path(s.y)} style={`stroke:var(--series-${i + 1})`} />)}
+      <g class="chart-cursor" visibility="hidden">
+        <line class="chart-cross" y1={m.t} y2={m.t + ph} />
+        {d.series.map((_, i) => <circle r="4.5" style={`fill:var(--series-${i + 1})`} />)}
+      </g>
+      <rect class="chart-hit" x={m.l} y={m.t} width={pw} height={ph} />
+    </svg>
+    <div class="chart-tip" hidden></div>
+  </div>
+  <details class="chart-table">
+    <summary>Show the numbers</summary>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th class="num">{d.x_label}</th>{d.series.map((s) => <th class="num">{s.name}</th>)}</tr></thead>
+        <tbody>
+          {d.x.filter((_, i) => i % step === 0).map((x, k) => (
+            <tr><td class="num">{fmt(x)}</td>{d.series.map((s) => <td class="num">{Number(s.y[k * step].toPrecision(4))}</td>)}</tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </details>
+  <script type="application/json" set:html={JSON.stringify(payload)} />
+</figure>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-chart]').forEach((el) => {
+    const p = JSON.parse(el.querySelector('script[type="application/json"]')!.textContent!);
+    const svg = el.querySelector('svg')!;
+    const hit = el.querySelector<SVGRectElement>('.chart-hit')!;
+    const cursor = el.querySelector<SVGGElement>('.chart-cursor')!;
+    const tip = el.querySelector<HTMLElement>('.chart-tip')!;
+    const line = cursor.querySelector('line')!;
+    const dots = [...cursor.querySelectorAll('circle')];
+    const pw = p.W - p.m.l - p.m.r, ph = p.H - p.m.t - p.m.b;
+    const fmt = (v: number) => String(Number(v.toPrecision(4)));
+    const hide = () => { cursor.setAttribute("visibility", "hidden"); tip.hidden = true; };
+    hit.addEventListener('pointerleave', hide);
+    hit.addEventListener('pointermove', (ev) => {
+      const box = svg.getBoundingClientRect();
+      const k = p.W / box.width;
+      const xv = p.x0 + (((ev.clientX - box.left) * k - p.m.l) / pw) * (p.x1 - p.x0);
+      let i = 0;
+      for (let j = 1; j < p.x.length; j++) if (Math.abs(p.x[j] - xv) < Math.abs(p.x[i] - xv)) i = j;
+      const cx = p.m.l + ((p.x[i] - p.x0) / (p.x1 - p.x0)) * pw;
+      line.setAttribute('x1', String(cx));
+      line.setAttribute('x2', String(cx));
+      p.series.forEach((s: { y: number[] }, n: number) => {
+        dots[n].setAttribute('cx', String(cx));
+        dots[n].setAttribute('cy', String(p.m.t + ph - ((s.y[i] - p.y0) / (p.y1 - p.y0)) * ph));
+      });
+      cursor.setAttribute("visibility", "visible");
+      tip.replaceChildren();
+      const head = document.createElement('div');
+      head.className = 'chart-tip-x';
+      head.textContent = `${fmt(p.x[i])} ${p.xl.replace(/.*\((.*)\)/, '$1')}`;
+      tip.append(head);
+      p.series.forEach((s: { name: string; y: number[] }, n: number) => {
+        const row = document.createElement('div');
+        const key = document.createElement('span');
+        key.className = 'chart-key';
+        key.style.background = `var(--series-${n + 1})`;
+        const val = document.createElement('b');
+        val.textContent = fmt(s.y[i]);
+        row.append(key, s.name + ' ', val);
+        tip.append(row);
+      });
+      tip.hidden = false;
+      const left = cx / k;
+      tip.style.left = (left > box.width * 0.6 ? left - tip.offsetWidth - 12 : left + 12) + 'px';
+    });
+  });
+</script>

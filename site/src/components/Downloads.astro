@@ -1,0 +1,24 @@
+---
+import { dataUrl, projectOf, readData, type Manifest } from '../lib/site';
+const { assembly, project } = Astro.props as { assembly: string; project?: string };
+const slug = projectOf(Astro, project);
+const m = readData<Manifest>(slug, 'cad', assembly, 'manifest.json');
+const href = (f: string) => dataUrl(slug, 'cad', assembly, f);
+---
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Part</th><th>Print</th><th>CAD</th><th>Web</th></tr></thead>
+    <tbody>
+      {m.parts.map((p) => (
+        <tr>
+          <td>{p.name}</td>
+          <td><a href={href(p.files.stl)} download>STL</a></td>
+          <td><a href={href(p.files.step)} download>STEP</a></td>
+          <td><a href={href(p.files.glb)} download>GLB</a></td>
+        </tr>
+      ))}
+      <tr><td>Whole assembly</td><td>—</td><td><a href={href(m.assembly_step)} download>STEP</a></td><td><a href={href('manifest.json')}>manifest</a></td></tr>
+    </tbody>
+  </table>
+</div>
+<p class="caption">Files are in millimetres. STEP opens in FreeCAD, Fusion and KiCad; STL goes straight to a slicer.</p>

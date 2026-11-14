@@ -1,0 +1,61 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { components } from '../../components/mdx';
+import { pagesOf, url } from '../../lib/site';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  const out = [];
+  for (const project of projects) {
+    const pages = await pagesOf(project.id);
+    for (const [i, page] of pages.entries()) {
+      out.push({ params: { project: project.id, page: page.slug || undefined }, props: { project, pages, i } });
+    }
+  }
+  return out;
+}
+
+const { project, pages, i } = Astro.props;
+const page = pages[i];
+Astro.locals.project = project.id;
+const { Content } = await render(page.entry);
+const prev = pages[i - 1], next = pages[i + 1];
+---
+<Base title={`${page.title} · ${project.data.title}`} description={page.summary || project.data.summary}>
+  <a slot="crumb" class="crumb" href={url(`/${project.id}/`)}>{project.data.title}</a>
+  <div class="shell">
+    <nav class="side" aria-label={`${project.data.title} pages`}>
+      <p class="side-title">{project.data.title}</p>
+      <ol>
+        {pages.map((p) => (
+          <li><a href={p.href} aria-current={p === page ? 'page' : undefined}><span class="n">{p.num}</span>{p.title}</a></li>
+        ))}
+      </ol>
+    </nav>
+    <main id="main" class="prose">
+      <p class="eyebrow">{page.num} / {String(pages.length).padStart(2, '0')}</p>
+      <h1>{page.title}</h1>
+      {page.summary && <p class="lead">{page.summary}</p>}
+      <button class="open-all" hidden>Open all sections</button>
+      <Content components={components} />
+      <nav class="pager" aria-label="Next and previous page">
+        {prev ? <a href={prev.href}><span>Previous</span>{prev.title}</a> : <span />}
+        {next && <a class="next" href={next.href}><span>Next</span>{next.title}</a>}
+      </nav>
+    </main>
+  </div>
+</Base>
+
+<script>
+  const btn = document.querySelector<HTMLButtonElement>('.open-all');
+  const folds = [...document.querySelectorAll<HTMLDetailsElement>('.prose > details')];
+  if (btn && folds.length) {
+    btn.hidden = false;
+    btn.addEventListener('click', () => {
+      const open = folds.some((d) => !d.open);
+      folds.forEach((d) => (d.open = open));
+      btn.textContent = open ? 'Close all sections' : 'Open all sections';
+    });
+  }
+</script>

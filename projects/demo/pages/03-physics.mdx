@@ -1,0 +1,20 @@
+---
+title: Physics
+summary: What the simulation says, and what it assumes.
+---
+
+**Pushed 5 mm sideways and released, the post is still ringing two seconds later.** The
+stiffness and damping below are placeholders until a real part is measured.
+
+<Chart sim="oscillator" />
+
+<Params sim="oscillator" />
+
+<details>
+<summary>The detail</summary>
+
+The model is a single mass on a spring with viscous damping, integrated with
+`scipy.integrate.solve_ivp` in `physics/oscillator.py`. The envelope is the
+closed-form decay; the two agreeing is the check that the integration is right.
+
+</details>

@@ -1,0 +1,27 @@
+---
+import { grams, projectOf, readData, type Manifest } from '../lib/site';
+const { assembly, project } = Astro.props as { assembly: string; project?: string };
+const m = readData<Manifest>(projectOf(Astro, project), 'cad', assembly, 'manifest.json');
+---
+<div class="table-wrap wide">
+  <table>
+    <thead>
+      <tr><th>Part</th><th>Source</th><th>Material</th><th class="num">Mass</th><th class="num">Size (mm)</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      {m.parts.map((p) => (
+        <tr>
+          <td><span class="swatch" style={`background:${p.color}`} />{p.name}{p.mpn && <span class="mono dim"> {p.mpn}</span>}</td>
+          <td>{p.source}</td>
+          <td>{p.material ?? '—'}</td>
+          <td class="num">{grams(p.mass_g)}</td>
+          <td class="num">{p.size_mm.map((v) => v.toFixed(0)).join(' × ')}</td>
+          <td>{p.description}{p.notes.map((n) => <span class="tag">{n}</span>)}</td>
+        </tr>
+      ))}
+    </tbody>
+    <tfoot>
+      <tr><td colspan="3">Assembly</td><td class="num">{grams(m.mass_g)}</td><td class="num">{m.size_mm.map((v) => v.toFixed(0)).join(' × ')}</td><td /></tr>
+    </tfoot>
+  </table>
+</div>

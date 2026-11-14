@@ -1,0 +1,23 @@
+---
+import '../styles/global.css';
+import { SITE_TITLE, url } from '../lib/site';
+const { title, description } = Astro.props as { title?: string; description?: string };
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title ? `${title} · ${SITE_TITLE}` : SITE_TITLE}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="icon" type="image/svg+xml" href={url("/favicon.svg")} />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="top">
+      <a class="brand" href={url('/')}>{SITE_TITLE}</a>
+      <slot name="crumb" />
+    </header>
+    <slot />
+  </body>
+</html>

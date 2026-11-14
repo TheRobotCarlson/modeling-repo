@@ -1,0 +1,4 @@
+title: Pipeline demo
+summary: A three-part assembly and a toy simulation that exercise the whole pipeline. Delete once a real project exists.
+status: concept   # concept | modeled | prototyped | tested
+order: 10         # position on the home page

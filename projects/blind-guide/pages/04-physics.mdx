@@ -1,0 +1,36 @@
+---
+title: Will it slide
+summary: How steep the ramp has to be for the bar to slip off it instead of sitting on it.
+---
+
+**A 60° ramp sheds the bar unless the surface is very grippy: it works up to a
+friction coefficient of about 1.6.** Hard plastic against a metal or plastic bar is
+usually well under 0.6, so there is a wide margin. Rubbery TPU can be near or above
+1, which is why the ramp is not made of it.
+
+<Chart sim="ramp" />
+
+Where the blue line is below the orange one, the bar slides.
+
+<Params sim="ramp" />
+
+<details>
+<summary>The detail</summary>
+
+Two things hold the bar on the ramp. Friction is one. The other is the shade
+itself: it hangs like a pendulum, and pushing the bar sideways makes it pull back
+towards where it wants to hang. For a bar pushed *x* sideways on a drop of length
+*L* below the roller, that pull is the bar's weight times *x / L*.
+
+Balancing forces along and across a ramp tilted θ from horizontal, the bar slides when
+
+θ > atan(μ) + atan(x / L)
+
+The first term is the friction angle. The second is the pendulum's, and it is
+small: 1.7° for a 4.5 mm push on a 150 mm drop. The bar's weight cancels out.
+
+Not modelled: the fabric's own stiffness, the bar tilting as one end is pushed, and
+the motor still paying out fabric while the bar sits on the ramp. The friction
+values quoted above are typical ranges, not measurements of these parts.
+
+</details>

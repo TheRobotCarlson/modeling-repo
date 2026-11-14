@@ -88,28 +88,29 @@ for dz in (-BRACKET_H / 2 + 6, BRACKET_H / 2 - 6):
     bracket -= Pos(0, back + BRACKET_D - 2, bz + dz) * Rot(90, 0, 0) * Cylinder(2.2, 4)
 
 # --- export -------------------------------------------------------------------
-EST = "estimated from drawings: measure"
-asm = Assembly("blind-guide", "gear", title="AXIS Gear shade motor",
-               description="Reference model of the bought motor, its bracket and the shade chain.")
-asm.add("housing", housing, "Housing", color="#f1f1ee", source="bought", mpn="GR-ZB01-W", mass_g=314,
-        description="Motor body, 46 x 38 x 165 mm from the manufacturer's drawing. Mass is the whole unit, from the box.",
-        notes=["corner radius, cutouts: measure"])
-asm.add("band", band, "Rim", color="#8b93a5", source="bought", explode=(0, -14, 0),
-        description="Metal-look band around the front face.", notes=[EST])
-asm.add("button", button, "Power button", color="#dfe3e8", source="bought", explode=(0, -26, 0),
-        description="Touch button with the AXIS logo: hold to power on, tap to stop.", notes=[EST])
-asm.add("strip", strip, "Touch strip", color="#bcd0ea", source="bought", explode=(0, -26, 0),
-        description="LED touch strip: top is fully open, bottom fully closed.", notes=[EST])
-asm.add("top-buttons", top_buttons, "Set, Group and Pair buttons", color="#c9ccd1", source="bought",
-        explode=(0, 0, 14), description="Three physical buttons on the top face.", notes=[EST])
-asm.add("cog", cog, "Cogwheel", color="#d6d3c8", source="bought", explode=(0, 24, 0),
-        description="Drives the chain. Sits in the upper back, behind the back cover.", notes=[EST])
-asm.add("chain", chain, "Shade chain", color="#9aa1a8", source="bought", explode=(0, 24, 0),
-        description="The shade's own bead chain: enters through the top and wraps under the cogwheel.",
-        notes=["bead size and spacing: measure"])
-asm.add("cover", cover, "Back cover", color="#e4e4df", source="bought", explode=(0, 46, 0),
-        description="Snaps over the cogwheel. The motor will not power on without it.", notes=[EST])
-asm.add("bracket", bracket, "Mounting bracket", color="#d9d9d3", source="bought", explode=(0, 46, 0),
-        description="Screws or tapes to the frame. Two lips catch grooves in the motor's back; "
-                    "the motor slides down on them to tension the chain.", notes=[EST])
-asm.export()
+if __name__ == "__main__":
+    EST = "estimated from drawings: measure"
+    asm = Assembly("blind-guide", "gear", title="AXIS Gear shade motor",
+                   description="Reference model of the bought motor, its bracket and the shade chain.")
+    asm.add("housing", housing, "Housing", color="#f1f1ee", source="bought", mpn="GR-ZB01-W", mass_g=314,
+            description="Motor body, 46 x 38 x 165 mm from the manufacturer's drawing. Mass is the whole unit, from the box.",
+            notes=["corner radius, cutouts: measure"])
+    asm.add("band", band, "Rim", color="#8b93a5", source="bought", explode=(0, -14, 0),
+            description="Metal-look band around the front face.", notes=[EST])
+    asm.add("button", button, "Power button", color="#dfe3e8", source="bought", explode=(0, -26, 0),
+            description="Touch button with the AXIS logo: hold to power on, tap to stop.", notes=[EST])
+    asm.add("strip", strip, "Touch strip", color="#bcd0ea", source="bought", explode=(0, -26, 0),
+            description="LED touch strip: top is fully open, bottom fully closed.", notes=[EST])
+    asm.add("top-buttons", top_buttons, "Set, Group and Pair buttons", color="#c9ccd1", source="bought",
+            explode=(0, 0, 14), description="Three physical buttons on the top face.", notes=[EST])
+    asm.add("cog", cog, "Cogwheel", color="#d6d3c8", source="bought", explode=(0, 24, 0),
+            description="Drives the chain. Sits in the upper back, behind the back cover.", notes=[EST])
+    asm.add("chain", chain, "Shade chain", color="#9aa1a8", source="bought", explode=(0, 24, 0),
+            description="The shade's own bead chain: enters through the top and wraps under the cogwheel.",
+            notes=["bead size and spacing: measure"])
+    asm.add("cover", cover, "Back cover", color="#e4e4df", source="bought", explode=(0, 46, 0),
+            description="Snaps over the cogwheel. The motor will not power on without it.", notes=[EST])
+    asm.add("bracket", bracket, "Mounting bracket", color="#d9d9d3", source="bought", explode=(0, 46, 0),
+            description="Screws or tapes to the frame. Two lips catch grooves in the motor's back; "
+                        "the motor slides down on them to tension the chain.", notes=[EST])
+    asm.export()

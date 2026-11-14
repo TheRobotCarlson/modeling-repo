@@ -1,0 +1,66 @@
+---
+title: The guide
+summary: A cap for the top of the motor, with a ramp where the bar lands.
+---
+
+**The guide is a 13 g cap that drops over the top of the motor, with a 60° ramp
+along its glass-side edge.** The bar meets the ramp above the motor instead of the
+motor's flat top, slides down it towards the glass, and carries on down a 1.2 mm
+skin on the motor's side.
+
+<ModelViewer assembly="guide" height={560} />
+
+## How it works
+
+1. **Ramp.** It starts 4 mm below the motor's top on the glass side and rises
+   inwards to a crest 6.7 mm above the top. Anything landing within 4.7 mm of the
+   motor's edge lands on the slope.
+2. **Skin.** The glass-side wall is 1.2 mm thick, to fit the thin gap beside the
+   motor. Its lower edge is feathered so the bar does not hook it on the way back up.
+3. **Chain slots.** Two slots, open to the back, let the cap go on around the chain
+   without unthreading it. The ramp stops just short of the nearer chain run.
+4. **Grip pads.** Two soft TPU pads take up the clearance so the cap stays put.
+
+## Two materials, for opposite reasons
+
+**The ramp must be slippery and the grip must not be.** The body, ramp included, is
+rigid PETG. The 75A TPU goes only on the two pads that press against the motor. A
+TPU ramp would be the wrong way round: see [will it slide](./physics/).
+
+## Printing
+
+Print it front face down. The part is one outline pulled straight along the motor's
+depth, so in that orientation it needs no support, and the layer lines run along
+the direction the bar slides rather than across it.
+
+<details>
+<summary>The detail</summary>
+
+- Clearance to the motor is 0.3 mm a side. The pads sit 0.5 mm into the wall and
+  stand 0.3 mm proud of it, so they just touch the motor.
+- The front lip is 14 mm tall and stops above the power button.
+- The cap covers the Set, Group and Pair buttons on the motor's top. Lift it off to
+  reach them.
+- The top plate and ramp carry on 8.5 mm behind the motor, over the wall mount.
+  That assumes nothing behind the motor stands higher than its top.
+- The motor still lifts off its bracket with the cap on, since the back is open.
+
+What would change the design: a bar that overhangs the motor by more than 4.7 mm
+runs into the chain, and the ramp cannot follow it there. A gap beside the motor
+narrower than about 1.5 mm will not take the skin.
+
+</details>
+
+## Every part
+
+<PartsTable assembly="guide" />
+
+## Downloads
+
+For the motor in the photos, with the glass on its left as you face it:
+
+<Downloads assembly="guide" />
+
+Mirrored, for a motor with the glass on its right:
+
+<Downloads assembly="guide-mirrored" />

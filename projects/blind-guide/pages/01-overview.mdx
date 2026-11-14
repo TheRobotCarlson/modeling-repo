@@ -1,46 +1,46 @@
 ---
 title: Overview
-summary: Two motorised shades catch on the way down. The plan is a printed guide that steers them clear.
+summary: A shade's bottom bar lands on top of its motor on the way down. A printed cap with a ramp steers it past.
 ---
 
-**Two roller shades, each driven by an AXIS Gear motor, catch as they come down.**
-The idea is a printed part that slides on top and guides the shade inwards so it
-passes cleanly. This page tracks what is known; nothing has been designed or
-printed yet.
+**The bottom bar of each roller shade comes down onto the top of its AXIS Gear
+motor and stops there.** The fix is a cap that slides over the top of the motor.
+A ramp on its glass side meets the bar first and slides it towards the glass,
+where there is a thin gap for it to pass.
 
 <Stats>
-  <Stat value="2" label="shades to fix" />
-  <Stat value="46 × 38 × 165" label="motor body, mm" />
-  <Stat value="0" label="guide parts designed" />
+  <Stat value="13 g" label="printed cap" />
+  <Stat value="60°" label="ramp angle" />
+  <Stat value="4.7 mm" label="of the motor's top covered by the ramp" />
+  <Stat value="0" label="printed and tried" />
 </Stats>
 
-<Callout title="Only the motor's outer size is from the manufacturer.">
-  Every other feature of the model, such as the bracket, cogwheel, back cover and
-  button positions, is scaled from line drawings and the box photos. Check them
-  with calipers before a printed part depends on them.
+<Callout title="A first design, drawn from two photos and a datasheet.">
+  The motor's outer size is the manufacturer's. Its other features, and how far the
+  bar overhangs the motor, are estimates. Expect one test print for fit before this
+  works.
 </Callout>
 
-<ModelViewer assembly="gear" height={520} />
+<ModelViewer assembly="guide" height={520} />
 
 ## Where this stands
 
-1. **Reference model of the motor: done, as a first pass.** See [the motor](./model/).
-2. **Measurements of the real installation: needed.** See [what to measure](./measure/).
-3. **Guide design: not started.** It depends on where exactly the shade catches.
-
-## What the printer makes possible
-
-The guide can mix materials in one print. The Bambu Lab H3C takes up to nine, and
-one of them can be a very soft 75A TPU. That suggests a rigid body for the ramp
-with rubber-like TPU where the part has to grip, or where the shade slides over it.
+1. **Reference model of the motor: first pass done.** See [the motor](./model/).
+2. **Guide: first design done, not printed.** See [the guide](./guide/).
+3. **Ramp angle: checked against friction.** See [will it slide](./physics/).
+4. **Three measurements would firm it up.** See [what to measure](./measure/).
 
 <details>
 <summary>The detail</summary>
 
-AXIS's own installation guide warns about exactly this failure: the shade must
-never touch the bracket as it moves past, because contact "impedes shade movement
-and could lead to a situation where the shade cannot move past Gear." Their test is
-to hold a hand where the bracket will go and run the shade past it. A guide is the
-fix for an installation where that clearance was not available.
+What is known about the installation, from the photos: the motor hangs on the side
+of the window recess with its face along the wall, so the glass is beside it. The
+shade hangs just beside the motor's glass-side face. Its bottom bar is a little
+wider than that gap, so the end of the bar comes down on the edge of the motor's
+top, just outside the nearer of the two chain runs.
+
+AXIS's installation guide warns about this case: the shade must never touch the
+bracket as it moves past, because contact "impedes shade movement and could lead to
+a situation where the shade cannot move past Gear."
 
 </details>

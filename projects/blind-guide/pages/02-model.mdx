@@ -1,0 +1,59 @@
+---
+title: The motor
+summary: A reference model of the AXIS Gear, with where each number came from.
+---
+
+**The AXIS Gear is a 46 × 38 × 165 mm box that hangs on a wall bracket and pulls
+the shade's bead chain around a cogwheel.** Use the slider to take it apart: the
+chain comes in through the top, wraps under the cogwheel behind the back cover, and
+the bracket's two lips sit in grooves low on the back.
+
+<ModelViewer assembly="gear" height={560} />
+
+## Where the numbers come from
+
+| Dimension | Value | Source |
+|---|---|---|
+| Body width × depth × height | 46 × 38 × 165 mm | Manufacturer's dimension drawing |
+| "Gear dimensions" on the box | 43 × 47 × 169 mm | Box label |
+| Depth including bracket | 47 mm | Inferred: the box's 47 minus the drawing's 38 leaves 9 mm for the bracket |
+| Weight | 314 g | Box label |
+| Solar bar | 406 × 36 × 23 mm, 490 g | Box label (drawing says 408 mm) |
+| Space needed below the bracket | 3 in (76 mm) | Installation guide, for the power plug |
+| Everything else | — | Scaled from drawings and photos |
+
+**The box and the drawing disagree, by 3 mm in width and 4 mm in height.** The model
+uses the drawing. A caliper reading of the real unit settles it.
+
+<details>
+<summary>The detail</summary>
+
+How it mounts, from the installation guide:
+
+- The bracket fixes to the frame with two screws or double-sided tape, either on
+  its back (inside mount) or on its side (outside and mullion mounts).
+- The back cover comes off, the chain goes over the cogwheel, and the cover snaps
+  back. The motor will not power on with the cover off.
+- The motor goes onto the bracket at an angle so the lips enter the grooves, then
+  slides **down** until the chain is taut. A ratchet holds it there.
+- To remove it, pull the bottom about a centimetre away from the bracket and lift.
+- Power (solar bar or adapter) plugs into the bottom.
+
+What that means for a guide: it cannot block the chain where it enters the top,
+it should not cover the three buttons on the top face unless they stay reachable,
+and it must still let the motor lift off its bracket.
+
+Sources: AXIS Gear Partner Course Documentation v1.4 (September 2019), the
+[installation](https://support.helloryse.com/en/articles/5193936-how-to-install-axis-gear)
+and [mounting](https://support.helloryse.com/en/articles/5193923-mounting-dismounting-axis-gear-from-its-bracket)
+articles on the Ryse support site, and the product box.
+
+</details>
+
+## Every part
+
+<PartsTable assembly="gear" />
+
+## Downloads
+
+<Downloads assembly="gear" />

@@ -1,0 +1,107 @@
+---
+title: Gateway
+summary: The LoRa receiver for the office. A third kit on USB power, with an optional temperature and humidity sensor.
+---
+
+**A third kit in a 74 × 42 × 18 mm box on the office desk, plugged into USB and
+always listening.** It turns every LoRa packet from the remotes into the same Home
+Assistant event the Wi-Fi remotes send, and blinks for each one. The left end is a
+vented chamber for an SHT40, so the office gets a temperature and humidity reading
+for $6. Modeled, not built. The firmware compiles.
+
+<ModelViewer assembly="gateway" height={480} />
+
+## Only needed for LoRa
+
+**Remotes on Wi-Fi do not use the gateway.** Switch a remote to LoRa and it needs
+one gateway within range. A single gateway serves every remote and sensor module
+in the house. The office suits it because it is central and already has power.
+For the longest range, put it high on a shelf, not under a monitor or against
+metal.
+
+<details>
+<summary>Why the antennas go where they do</summary>
+
+- **LoRa** runs along the inside of the front wall: 45 mm of flexible antenna,
+  lying flat like the ones in the remotes. Matching their orientation helps a
+  little. Inside a house the signal bounces enough that it matters less than height.
+- **Wi-Fi** is on the right end wall, away from the LoRa antenna and clear of the
+  board.
+- If range falls short, a U.FL-to-SMA lead and an external 915 MHz antenna are the
+  usual fix. The kit's own pigtail would reach a hole drilled in the back wall. Not
+  modeled.
+
+</details>
+
+## The sensor chamber
+
+**The SHT40 sits in its own compartment, walled off from the board and vented on
+three sides and the top.** Air comes in low at the side and rises past the sensor.
+The board runs Wi-Fi all the time and warms the box, so the reading will still sit a
+little above the room. The firmware has an offset to set after comparing with a
+thermometer.
+
+<details>
+<summary>The detail</summary>
+
+- **Wiring.** Four wires from the sensor's header to the XIAO: VIN to 3V3, GND to
+  GND, SDA to D4, SCL to D5. They are the same pins as the
+  [sensor module](../sensor-module/). They pass through a notch at the top of the
+  partition. Plug the notch with a bit of foam or tape so the board's air stays out.
+- **How much warmer.** Unknown until measured. The board draws about 0.3 to 0.5 W
+  (EST) and heats the main compartment, and the partition passes some of that
+  through. A sensor on a short lead outside the box is the fallback if the offset
+  drifts with the load.
+- **Without the sensor**, leave the board out and delete the `i2c:` block and the
+  `sht4x` sensor from `gateway.yaml`. The chamber stays empty.
+- **The board's outline** (25.4 × 17.8 mm) and pin order (VIN, 3V, GND, SCL, SDA) are
+  estimates: Adafruit's page gives neither.
+
+</details>
+
+## What it reports
+
+**One event per remote press and one per sensor-module reading, plus four sensors
+of its own.**
+
+| | |
+|---|---|
+| `esphome.remote_button` | `remote`, `button`, `battery_v`, `rssi`. The same as Wi-Fi presses, plus signal strength |
+| `esphome.remote_sensor` | `node`, `temperature`, `humidity`, `battery_v`, `rssi`, from a LoRa [sensor module](../sensor-module/) |
+| Office temperature, Office humidity | From the SHT40, once a minute |
+| Last packet RSSI | Signal strength of the last packet heard, any sender |
+| Wi-Fi signal | Every five minutes |
+
+<details>
+<summary>Packets and the radio settings</summary>
+
+- Packets are variable length with an explicit header. The remotes send 6 bytes
+  starting 0xA5 and the sensor module sends 9 starting 0xA6. The gateway drops
+  anything else.
+- Remotes and gateway must agree on frequency, bandwidth, spreading factor, coding
+  rate, preamble and header mode. They live in `common/kit.yaml` and `gateway.yaml`,
+  so change both together. The defaults are 915 MHz, 125 kHz, SF7, 4/5.
+- Packets are not encrypted or signed. Anyone with a LoRa radio nearby could
+  replay a press. Keep LoRa remotes off locks and garage doors.
+
+</details>
+
+## Printing
+
+1. **Shell and light pipe: one print, top face down.** The vents are vertical
+   slots, so they need no bridging. The light pipe is clear PLA, printed with
+   the top.
+2. **Base: floor down.** It carries the partition, the kit cradle and the sensor
+   rails, with TPU feet and grip strips.
+
+The base hooks into the shell at the sensor end with a tongue, and four M2 screws
+hold the rest. Power comes from any 5 V USB adapter through a USB-C cable out
+of the back.
+
+## Every part
+
+<PartsTable assembly="gateway" />
+
+## Downloads
+
+<Downloads assembly="gateway" />

@@ -1,6 +1,12 @@
-# LoRa gateway: a second XIAO ESP32S3 + Wio-SX1262 kit on USB power, always
-# listening. Turns each remote packet into the same Home Assistant event the Wi-Fi
-# remotes send, plus the signal strength.
+# LoRa gateway: a third XIAO ESP32S3 + Wio-SX1262 kit on USB power in the office,
+# always listening. Turns each remote packet into the same Home Assistant event the
+# Wi-Fi remotes send, plus the signal strength. Blinks the user LED for every packet
+# heard, and reads the office's temperature and humidity from an optional SHT40.
+#
+# Packets (variable length, explicit header):
+#   0xA5, remote id, button, battery mV high, low, sequence                    6 bytes
+#   0xA6, node id, temp x100 high, low (signed), RH x100 high, low,
+#         battery mV high, low, sequence                                        9 bytes
 substitutions:
   name: remote-gateway
 
@@ -32,6 +38,19 @@ spi:
   mosi_pin: GPIO9
   miso_pin: GPIO8
 
+# The SHT40 on D4 / D5, as in the sensor module. Delete this, the sht4x sensor and
+# the board itself if the office does not need it.
+i2c:
+  sda: GPIO5
+  scl: GPIO6
+
+output:
+  - platform: gpio
+    id: led
+    pin:
+      number: GPIO21      # the XIAO's user LED, active low
+      inverted: true
+
 sx126x:
   id: radio
   cs_pin: GPIO41
@@ -42,17 +61,19 @@ sx126x:
   rf_switch: true
   tcxo_voltage: 1_8V
   tcxo_delay: 5ms
-  frequency: 915MHz
+  frequency: 915MHz      # US; use 868MHz in the EU, the same as the remotes
   modulation: LORA
   bandwidth: 125_0kHz
   spreading_factor: 7
   coding_rate: CR_4_5
   preamble_size: 8
-  payload_length: 6
   crc_enable: true
   rx_start: true
   on_packet:
     then:
+      - script.execute: blink
+      - lambda: |-
+          id(last_rssi).publish_state(rssi);
       - if:
           condition:
             lambda: "return x.size() == 6 && x[0] == 0xA5;"
@@ -64,3 +85,45 @@ sx126x:
                   button: !lambda "return to_string(x[2]);"
                   battery_v: !lambda 'return str_sprintf("%.2f", ((x[3] << 8) | x[4]) / 1000.0f);'
                   rssi: !lambda 'return str_sprintf("%.0f", rssi);'
+      - if:
+          condition:
+            lambda: "return x.size() == 9 && x[0] == 0xA6;"
+          then:
+            - homeassistant.event:
+                event: esphome.remote_sensor
+                data:
+                  node: !lambda "return \"sensor-\" + to_string(x[1]);"
+                  temperature: !lambda 'return str_sprintf("%.2f", (int16_t) ((x[2] << 8) | x[3]) / 100.0f);'
+                  humidity: !lambda 'return str_sprintf("%.2f", ((x[4] << 8) | x[5]) / 100.0f);'
+                  battery_v: !lambda 'return str_sprintf("%.2f", ((x[6] << 8) | x[7]) / 1000.0f);'
+                  rssi: !lambda 'return str_sprintf("%.0f", rssi);'
+
+script:
+  - id: blink
+    mode: restart
+    then:
+      - output.turn_on: led
+      - delay: 80ms
+      - output.turn_off: led
+
+sensor:
+  - platform: template
+    id: last_rssi
+    name: Last packet RSSI
+    unit_of_measurement: dBm
+    device_class: signal_strength
+    accuracy_decimals: 0
+    update_interval: never
+  - platform: sht4x
+    update_interval: 60s
+    temperature:
+      name: Office temperature
+      # The board warms the box a little. Compare with a thermometer after an hour
+      # and set the difference here, e.g. - offset: -1.5
+      filters:
+        - offset: 0.0
+    humidity:
+      name: Office humidity
+  - platform: wifi_signal
+    name: Wi-Fi signal
+    update_interval: 300s

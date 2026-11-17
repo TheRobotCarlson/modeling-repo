@@ -4,13 +4,13 @@ currency: USD
 items:
   - ref: kit
     description: Wio-SX1262 with XIAO ESP32S3 kit, with Wi-Fi and LoRa FPC antennas
-    qty: 2
+    qty: 3
     manufacturer: Seeed Studio
     mpn: ""
     supplier: Seeed Studio
     url: https://www.seeedstudio.com/Wio-SX1262-with-XIAO-ESP32S3-p-5982.html
     unit_cost:
-    notes: One already on hand. Buy a third to build the LoRa gateway. Seeed SKU not checked.
+    notes: One per remote and one for the gateway. One already on hand. Seeed SKU not checked.
   - ref: cell
     description: LiPo cell, 3.7 V 350 mAh, 36 x 19.6 x 5.2 mm, protection circuit built in
     qty: 2
@@ -110,6 +110,15 @@ items:
     url: https://www.adafruit.com/product/5309
     unit_cost: 4.50
     notes: Puck only. Feed it on 3Vo and remove the power LED if it has one (see What to measure).
+  - ref: sht40
+    description: SHT40 temperature and humidity sensor breakout, STEMMA QT
+    qty: 1
+    manufacturer: Adafruit
+    mpn: "4885"
+    supplier: Adafruit
+    url: https://www.adafruit.com/product/4885
+    unit_cost: 5.95
+    notes: Gateway, optional. The office's temperature and humidity.
   - ref: screws
     description: M2 x 8 mm pan-head Phillips thread-forming screw for plastic, 18-8 stainless (pack of 25)
     qty: 1
@@ -118,7 +127,7 @@ items:
     supplier: McMaster-Carr
     url: https://www.mcmaster.com/99461A916/
     unit_cost:
-    notes: Four per remote
+    notes: Four per remote and four for the gateway
   - ref: wire
     description: Silicone-cover stranded wire, 30 AWG, 50 ft, black
     qty: 1

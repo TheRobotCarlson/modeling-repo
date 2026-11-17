@@ -70,7 +70,8 @@ sx126x:
   spreading_factor: 7
   coding_rate: CR_4_5
   preamble_size: 8
-  payload_length: 6
+  # No payload_length: variable length with an explicit header, so the gateway can
+  # take the remotes' 6-byte packets and the sensor module's 9-byte ones.
   crc_enable: true
   pa_power: 14
   rx_start: false

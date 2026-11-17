@@ -11,5 +11,5 @@ on USB power, or while `input_boolean.remotes_stay_awake` is on in Home Assistan
 `common/motion.yaml` is the puck's accelerometer (MSA311). Its sleep settings are
 register writes from the datasheet, untested.
 
-Checked with ESPHome 2026.10.2: all configs pass `esphome config`, and puck (Wi-Fi)
-and bar (LoRa) build with `esphome compile`. Not yet run on hardware.
+Checked with ESPHome 2026.10.2: all configs pass `esphome config`, and puck (Wi-Fi),
+bar (LoRa) and the gateway build with `esphome compile`. Not yet run on hardware.

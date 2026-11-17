@@ -29,7 +29,7 @@ every 30 minutes or more, or power it from USB.
 | LiPo cell, Adafruit 2750 | Same cell as the remotes | [Adafruit](https://www.adafruit.com/product/2750) |
 | 2 × 1 MΩ, 100 nF | Battery divider on D0, as in the remotes | See [parts](../parts/) |
 
-A LoRa build also needs the [gateway](../firmware/), which the remotes can share.
+A LoRa build also needs the [gateway](../gateway/), which the remotes can share.
 
 <details>
 <summary>The spec</summary>
@@ -42,8 +42,8 @@ A LoRa build also needs the [gateway](../firmware/), which the remotes can share
   wake pins: a timer wakes it (`deep_sleep` with `sleep_duration`).
 - **Report.** Over LoRa, a new packet type: marker 0xA6, node id, temperature ×100
   (signed 16 bits), humidity ×100, battery mV and a sequence number, 9 bytes. The
-  gateway's packet length is fixed at 6 bytes today, so the gateway config has to
-  change to accept both. Over Wi-Fi, plain ESPHome sensors.
+  gateway already accepts it and fires `esphome.remote_sensor`. Over Wi-Fi, plain
+  ESPHome sensors.
 - **Enclosure.** The sensor sits behind vents, away from the board and the cell,
   which warm up while awake. A printed louvred case with the SHT40 at the top, or on
   a short lead outside, both work. Not designed yet.

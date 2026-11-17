@@ -14,7 +14,7 @@ sys.path.insert(0, str(paths.PROJECTS / "ha-remote" / "cad"))
 ALLOWED = {("shell", "screws"), ("wio", "grip")}
 
 
-@pytest.mark.parametrize("name", ["puck", "bar"])
+@pytest.mark.parametrize("name", ["puck", "bar", "gateway"])
 def test_parts_do_not_collide(name):
     p = importlib.import_module(name).build()
     keys = list(p)
@@ -65,7 +65,14 @@ def test_wires_reach_their_parts(name, switch):
             assert p[w].distance_to(p[t]) < 0.01, (w, t)
 
 
-@pytest.mark.parametrize("name", ["puck", "bar"])
+def test_gateway_wires_reach_the_sensor():
+    p = importlib.import_module("gateway").build()
+    for w in ("wire-bus", "wire-black", "wire-supply"):
+        for t in ("xiao", "sensor"):
+            assert p[w].distance_to(p[t]) < 0.01, (w, t)
+
+
+@pytest.mark.parametrize("name", ["puck", "bar", "gateway"])
 def test_light_pipe_runs_from_led_to_top(name):
     m = importlib.import_module(name)
     p = m.build()

@@ -21,6 +21,7 @@ the rest.
 | Where the battery pads are with the Wio board fitted | Reachable | Wiring |
 | XIAO user LED position (GPIO21) | 7 mm from the board's centre toward USB, 6 mm to the side | The light pipe must sit over it |
 | MSA311 board: header pin order, and any power LED | Vin, 3Vo, GND, SCL, SDA, INT; no LED | Wiring; an LED would draw more than the whole remote asleep |
+| SHT40 board (gateway): outline and pin order | 25.4 × 17.8 mm; VIN, 3V, GND, SCL, SDA | The rails in the sensor chamber; wiring |
 
 The stem gaps are the numbers to get right. Too large, and the button rolls its
 channel without clicking. Too small, and the switch is pressed all the time and
@@ -50,3 +51,6 @@ height to vary by more than the 0.2 mm gap, so measure the switches that arrive.
 | Wake on motion | Pick the puck up, watch the log | Wakes; sleeps again after 4 s |
 | Wake on every button | Press each one, watch the event's `button` | 1 to 5 |
 | Wi-Fi and LoRa range with the antennas inside | Walk around with it | Unknown |
+| Gateway hears every room | Press a LoRa remote in each room, read `rssi` in the event | Unknown. The SX1262 is rated to about −124 dBm at SF7, 125 kHz; leave 10 dB of margin |
+| Gateway's sensor offset | An hour beside a thermometer, then set `offset` in `gateway.yaml` | Reads warm by an unknown amount |
+| Gateway power draw | USB power meter | 0.3 to 0.5 W (EST) |

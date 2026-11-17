@@ -219,6 +219,25 @@ def accel_board(x, y, z0):
     return b, pads
 
 
+SHT40 = (17.8, 25.4, 1.6)          # EST: Adafruit 4885 outline (the page gives none), PCB thickness
+
+
+def sht40_board(x, y, z0):
+    """SHT40 breakout, long side along Y, header row along its +X edge.
+
+    Returns (board, pads) where pads maps VIN, 3V, GND, SCL, SDA to the top of each
+    header hole. Outline and pin order are EST until checked on the board.
+    """
+    w, l, t = SHT40
+    b = Pos(x, y, z0) * Box(w, l, t, align=BASE)
+    b += Pos(x - 3.0, y, z0 + t) * Box(1.5, 1.5, 0.5, align=BASE)                 # the sensor
+    for sy in (-1, 1):
+        b += Pos(x - 2.0, y + sy * (l / 2 - QT[1] / 2), z0 + t) * Box(QT[1], QT[0], QT[2], align=BASE)
+    names = ["VIN", "3V", "GND", "SCL", "SDA"]
+    pads = {n: (x + w / 2 - 1.3, y + (i - 2) * 2.54, z0 + t) for i, n in enumerate(names)}
+    return b, pads
+
+
 PIPE_R = 1.25                      # printed light pipe, clear filament
 
 
@@ -235,4 +254,4 @@ def screw_m2(x, y, z_head, length=8.0):
 
 __all__ = ["kit", "battery", "tact", "fpc_arc", "fpc_flat", "keypad", "slab", "screw_m2",
            "wire", "pad", "resistor_y", "capacitor", "motor", "driver", "accel_board",
-           "light_pipe", "Circle", "Rot"]
+           "light_pipe", "sht40_board", "Circle", "Rot"]

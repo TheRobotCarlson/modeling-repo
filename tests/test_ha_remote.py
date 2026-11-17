@@ -42,17 +42,33 @@ def test_stems_rest_just_above_switches(name, caps):
 # Each wire must touch what it connects: a gap here means a wire stops short.
 ENDS = {
     "wire-red": ["battery", "xiao", "divider"],
-    "wire-black": ["battery", "xiao", "divider"],
+    "wire-black": ["battery", "xiao", "divider", "driver"],
     "wire-sense": ["xiao", "divider"],
-    "wire-signal": ["xiao"],
+    "wire-signal": ["xiao", "driver"],
+    "wire-supply": ["xiao", "driver", "divider"],
+    "wire-motor": ["driver", "motor"],
 }
 
 
 @pytest.mark.parametrize("name, switch", [("puck", "switch"), ("bar", "switches")])
 def test_wires_reach_their_parts(name, switch):
     p = importlib.import_module(name).build()
-    ends = {**ENDS, "wire-signal": ["xiao", switch]}
-    ends["wire-black"] = ends["wire-black"] + [switch]
+    ends = {k: list(v) for k, v in ENDS.items()}
+    ends["wire-signal"].append(switch)
+    ends["wire-black"].append(switch)
+    if name == "puck":
+        ends["wire-bus"] = ["xiao", "accel"]
+        ends["wire-supply"].append("accel")
+        ends["wire-black"].append("accel")
     for w, targets in ends.items():
         for t in targets:
             assert p[w].distance_to(p[t]) < 0.01, (w, t)
+
+
+@pytest.mark.parametrize("name", ["puck", "bar"])
+def test_light_pipe_runs_from_led_to_top(name):
+    m = importlib.import_module(name)
+    p = m.build()
+    pipe, xiao = p["pipe"].bounding_box(), p["xiao"]
+    assert pipe.max.Z == pytest.approx(m.H)                   # flush with the top face
+    assert 0.3 < p["pipe"].distance_to(xiao) < 1.0           # just clear of the LED

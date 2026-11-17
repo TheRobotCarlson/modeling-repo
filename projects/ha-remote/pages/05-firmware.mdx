@@ -4,15 +4,17 @@ summary: ESPHome configs for both remotes, over Wi-Fi now or LoRa later.
 ---
 
 **Each remote wakes on a press, sends Home Assistant an event saying which button,
-and goes back to sleep.** The configs are in
+buzzes once when it is delivered, and goes back to sleep.** The configs are in
 [`projects/ha-remote/firmware`](https://github.com/TheRobotCarlson/modeling-repo/tree/main/projects/ha-remote/firmware).
 They pass `esphome config` and build with `esphome compile` (ESPHome 2026.10);
-they have not yet run on the board.
+they have not yet run on the board. The accelerometer's sleep settings are written
+straight to its registers from the MSA311 datasheet and are untested.
 
 | File | What it is |
 |---|---|
-| `puck.yaml`, `bar.yaml` | One per remote: buttons, wake pins |
-| `common/kit.yaml` | The board, the radio, the battery reading, the sleep routine |
+| `puck.yaml`, `bar.yaml` | One per remote: buttons, wake pins, motor pin |
+| `common/kit.yaml` | The board, the radio, battery and USB sensing, feedback, the report loop |
+| `common/motion.yaml` | The puck's accelerometer: double tap, and waking when moved |
 | `common/wifi.yaml` | Report over Wi-Fi and the native API (the default) |
 | `common/lora.yaml` | Report with one LoRa packet instead |
 | `gateway.yaml` | LoRa receiver for a second kit on USB power |
@@ -36,10 +38,34 @@ actions:
       entity_id: light.living_room
 ```
 
-Two settings to make once. In the ESPHome integration, turn on **Allow the device
-to perform Home Assistant actions** for each remote, or the events are dropped.
-Then create a toggle helper, `input_boolean.remotes_stay_awake`. While it is on, a
-remote that wakes stays awake for over-the-air updates.
+| Remote | `button` |
+|---|---|
+| Puck | 1 = press, 2 = double tap on the case |
+| Bar | 1 = main, 2 – 5 = keys 1 – 4 |
+
+In the ESPHome integration, turn on **Allow the device to perform Home Assistant
+actions** for each remote, or the events are dropped.
+
+**To update a remote over the air, plug it into USB.** It stays awake while it is
+on USB power and sleeps again when unplugged. The toggle helper
+`input_boolean.remotes_stay_awake` does the same without a cable, for a remote
+that is already awake. Each remote also reports its battery voltage and an
+**On USB power** sensor.
+
+## Feedback
+
+**One buzz and blink: Home Assistant has it. Three: it did not.** Over Wi-Fi
+"has it" means the event was handed to Home Assistant. Over LoRa nothing comes
+back, so one buzz only means the packet was sent.
+
+## Waking on motion (puck)
+
+**Moving the puck wakes it and starts Wi-Fi, so a press that follows lands about
+two seconds sooner.** The cost is about 0.11 mAh per pick-up, more than a press.
+To turn it off, delete the `- pin: GPIO3` line under `esp32_ext1_wakeup` in
+`puck.yaml`; double tap still works while the puck is awake. On LoRa there is
+nothing to warm up, so turn it off there too. `motion_threshold` sets how hard a
+movement has to be (3.9 mg per step).
 
 ## Wi-Fi or LoRa
 
@@ -60,16 +86,24 @@ from `common/wifi.yaml` to `common/lora.yaml`.
 <details>
 <summary>How a press is handled</summary>
 
-1. Deep sleep is woken by any button pin going low (`esp32_ext1_wakeup`, `ANY_LOW`).
-   Each pin's `on_wake` records which button it was.
-2. `on_boot` runs the `report` script. Wi-Fi: wait up to 8 s for Home Assistant to
-   connect, fire the event, wait 300 ms. LoRa: send a 6-byte packet (marker, remote
-   id, button, battery mV, sequence number).
-3. `go_to_sleep` waits for every button to be released, since a held button would
-   wake the chip straight back up, and enters deep sleep.
-4. `on_shutdown` puts the SX1262 in cold sleep and turns on the RTC pull-ups.
+1. Deep sleep is woken by any wake pin going low (`esp32_ext1_wakeup`, `ANY_LOW`).
+   A button pin's `on_wake` records which button it was. The accelerometer's pin
+   records nothing.
+2. `on_boot` runs `report`. If nothing was pressed, it waits `idle_window` (4 s on
+   the puck, none on the bar) for a press. Then it sends every press waiting, one
+   at a time, through `send_press`. Wi-Fi: wait up to 8 s for Home Assistant, fire
+   the event, buzz once (or three times if Home Assistant never connected). LoRa:
+   send a 6-byte packet (marker, remote id, button, battery mV, sequence number),
+   then buzz.
+3. `go_to_sleep` waits for the buzz to finish and every button to be released,
+   since a held button would wake the chip straight back up. On the puck it puts
+   the accelerometer into low-power motion watch. Then it enters deep sleep.
+4. `on_shutdown` stops the motor, puts the SX1262 in cold sleep and turns on the
+   RTC pull-ups.
 
 A 20 s `run_duration` is the safety net: whatever happens, the remote sleeps again.
+USB power and the stay-awake helper both suspend it. Before this version the helper
+did not, so a remote put to sleep 20 s into an update.
 Wi-Fi uses a static IP and `fast_connect` because DHCP and scanning cost most of a
 second each. Set `static_ip` in each remote's file.
 

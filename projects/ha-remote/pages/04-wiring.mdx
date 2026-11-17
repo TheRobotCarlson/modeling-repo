@@ -4,21 +4,36 @@ summary: Which pad each wire goes to, and why the radio has to be put to sleep.
 ---
 
 **Each button is a switch between one XIAO pin and ground; the battery goes on the
-XIAO's battery pads; two resistors let the firmware read the battery.** No other
-parts. The radio kit is used as it comes.
+XIAO's battery pads; three resistors on D0 read both the battery and USB power.**
+The motor hangs off one more pin through a transistor, and the puck adds an
+accelerometer on I2C. The radio kit is used as it comes.
+
+| Pin | Puck | Bar |
+|---|---|---|
+| D0 (GPIO1) | Battery and USB sense | Battery and USB sense |
+| D1 (GPIO2) | Button | Main button (1) |
+| D2 – D5 (GPIO3 – 6) | Accelerometer INT, motor, SDA, SCL | Keys 1 – 4 (2 – 5) |
+| D6 (GPIO43) | Free | Motor |
+| D7 (GPIO44) | Free | Free |
+| D8 – D10 | The radio's SPI bus | The radio's SPI bus |
 
 | From | To | Note |
 |---|---|---|
 | LiPo + / − | XIAO `BAT+` / `BAT−` pads | Negative is the pad nearer the USB port (Seeed wiki) |
-| Main button | D1 (GPIO2) and GND | The puck's only button |
-| Key 1 – 4 (bar) | D2 – D5 (GPIO3 – GPIO6) and GND | One GND wire can daisy-chain all switches |
-| 1 MΩ | `BAT+` to D0 (GPIO1) | Top of the divider |
-| 1 MΩ + 100 nF | D0 (GPIO1) to GND | Bottom of the divider; the capacitor steadies the reading. Any ground will do: the models use the nearest switch's ground leg |
+| Each button | Its pin and GND | One GND wire can daisy-chain all switches |
+| 1 MΩ | `BAT+` to D0 | Top of the divider |
+| 1 MΩ + 100 nF | D0 to GND | Bottom of the divider; the capacitor steadies the reading. Any ground will do: the models use the nearest switch's ground leg |
+| 2.2 MΩ | `5V` pad to D0 | USB sense: on USB, D0 reads above 2.1 V; on the battery alone, never above 1.7 V |
+| Motor + | `3V3` | With a 1N4148 across the motor, stripe to `3V3` |
+| Motor − | PN2222A collector | Emitter to GND |
+| 1 kΩ | Motor pin to the PN2222A base | 1 MΩ from base to emitter keeps the motor off while the pin floats in sleep |
+| Accelerometer `3Vo`, GND, SDA, SCL, INT | `3V3`, GND, D4, D5, D2 | Puck only. Feed `3Vo`, not `Vin`, to skip the board's regulator |
 
-<ModelViewer assembly="bar" height={520} show={["Wiring"]} />
+<ModelViewer assembly="puck" height={520} show={["Wiring"]} />
 
 **The models carry every wire, as one way to run them.** Red is battery +, black
-is ground, white is the battery-sense line to D0, yellow are the button lines.
+is ground, orange is 3V3 and 5V, white is the sense line to D0, yellow the
+button and motor lines, blue the accelerometer, purple the motor leads.
 While the wiring shows, the printed parts turn see-through. Taking the model apart
 hides the wiring, because the parts it joins move away from each other. On the
 puck and bar pages the wiring starts hidden; **Show wiring** under the model turns
@@ -33,11 +48,19 @@ it on.
   of the switch. The stops between cell and kit are split so the leads pass
   between them.
 - **Button wires** leave the XIAO's edge pads, climb over the USB-C port and run
-  as a flat ribbon at 10.9 mm, clear of the battery leads below. Each drops to
+  as a flat ribbon at 10.9 mm, clear of the battery leads below. Wires that cross
+  the ribbon do it at 12 mm. Each drops to
   its switch's side. In the bar, ground runs up the same ribbon and branches to
   every switch.
 - **The divider** lies on the floor beside the battery (bar) or left of the
   switch (puck). Its bottom end goes to the nearest switch's ground leg.
+- **The motor driver** is a transistor, two resistors and a diode soldered into
+  one bundle and sleeved in heat-shrink. In the puck it sits on the floor right of
+  the kit, with the motor beside the switch. In the bar both sit on top of the
+  cell, under the keys.
+- **The accelerometer's five wires** (puck) leave the kit's left pads, run down
+  the left of the switch with the button wire and fan out over the board onto its
+  header. 3V3 and ground cross over from the right-hand pads 1.1 mm higher.
 - 30 AWG silicone wire is taken as 0.7 mm across. The models are tested so that
   no wire touches another part except at its ends. The routes are a plan; the battery pad
   position is estimated (see the callout).
@@ -56,7 +79,8 @@ it on.
 GPIO0 to GPIO21.** The radio takes D8 – D10 (GPIO7 – 9) for SPI, and its control
 lines use GPIO38 – 42 through the board-to-board connector. That leaves D0 – D5
 (GPIO1 – 6) as the wake-capable pins on the edge: one for the battery, five for
-buttons. D6 and D7 (GPIO43 and 44) are free but cannot wake the chip.
+buttons in the bar, or a button and the accelerometer's interrupt in the puck. D6
+and D7 (GPIO43 and 44) cannot wake the chip, which is fine for the motor.
 
 <details>
 <summary>The detail</summary>
@@ -69,8 +93,16 @@ buttons. D6 and D7 (GPIO43 and 44) are free but cannot wake the chip.
 - **GPIO3 is a strapping pin.** It only matters at power-on if JTAG has been
   configured in eFuses, which it has not on a stock XIAO. ESPHome warns about it
   anyway.
-- **The divider** draws about 2 µA all the time. That is the price of knowing the
+- **The divider** draws about 2.4 µA all the time. That is the price of knowing the
   charge level. The plain XIAO ESP32S3 has no battery-sense circuit of its own.
+- **USB sense on the same pin.** With 2.2 MΩ from the 5V pad, D0 reads
+  Vbat ÷ 2.45 on the battery (1.22 – 1.71 V) and (Vbat + 2.27) ÷ 2.45 on USB
+  (2.15 – 2.64 V). The firmware calls anything above 1.93 V "on USB". Unplugged,
+  the 5V pad sits near 0 V; if it does not, the threshold needs checking.
+- **The motor pin floats in deep sleep.** The 1 MΩ from base to emitter holds the
+  transistor off until the firmware drives the pin.
+- **GPIO21 is the user LED and the Wio board's button.** Pressing that button lights
+  the LED. Driving the LED is safe because the button is shut inside the case.
 - **Kit pins**, from Meshtastic's `seeed_xiao_s3` variant: NSS 41, RESET 42, BUSY
   40, DIO1 39, SCK 7, MISO 8, MOSI 9, RF switch on DIO2 (also wired to GPIO38),
   TCXO at 1.8 V on DIO3.

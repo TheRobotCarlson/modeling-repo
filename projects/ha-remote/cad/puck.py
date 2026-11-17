@@ -13,9 +13,10 @@ import math
 
 from build123d import Axis, Box, Circle, Cylinder, Pos, Rot
 
-from _parts import (BATT_L, CAP_BODY, CELL_W, GAP_Z, KIT_L, KIT_W, LORA_FPC, RES_D, RES_L, USB_OUT,
-                    WIFI_FPC, Z_USB, BASE, battery, capacitor, fpc_arc, keypad, kit, pad, resistor_y,
-                    screw_m2, slab, tact, wire)
+from _parts import (BATT_L, CAP_BODY, CELL_T, CELL_W, GAP_Z, KIT_L, KIT_W, LED_USER, LORA_FPC, PIPE_R,
+                    RES_D, RES_L, USB_OUT, WIFI_FPC, Z_USB, BASE, accel_board, battery, capacitor,
+                    driver, fpc_arc, keypad, kit, light_pipe, motor, pad, resistor_y, screw_m2, slab,
+                    tact, wire)
 from modelkit import Assembly
 
 R_OUT, WALL, TOP_T, BASE_T = 36.0, 2.0, 2.0, 2.0
@@ -29,6 +30,9 @@ FIT = 0.2                         # base to shell bore, per side
 
 KIT_Y = R_IN - 0.9 - KIT_L / 2 - USB_OUT     # USB face 0.9 mm inside the wall
 BATT_Y = -18.5
+ACCEL_AT = (-1.5, BATT_Y, BASE_T + CELL_T + 0.5)    # on the cell, on 0.5 mm foam tape
+MOTOR_AT = (18.0, 2.0)                               # on the floor, right of the switch
+DRIVER_AT = (16.0, 14.0)
 
 
 def build():
@@ -43,6 +47,10 @@ def build():
     p["switch"] = Pos(0, 0, sw_z) * sw
     p["fpc-wifi"] = fpc_arc(R_IN, *WIFI_FPC, 0, 3.5)
     p["fpc-lora"] = fpc_arc(R_IN, *LORA_FPC, 180, 3.0)
+    p["accel"], _ = accel_board(*ACCEL_AT)
+    p["motor"] = motor(*MOTOR_AT, BASE_T + 0.05)
+    led = kloc * Pos(*LED_USER, 0)
+    led_xy = (led.position.X, led.position.Y)
 
     # --- shell ---------------------------------------------------------------------
     shell = Cylinder(R_OUT, H, align=BASE)
@@ -60,6 +68,9 @@ def build():
     shell -= port.fillet(1.6, port.edges().filter_by(Axis.Y))
     # light window: the top thins to 0.6 mm over the XIAO's charge LED (EST position)
     shell -= Pos(-6.0, KIT_Y + 7.0, H - TOP_T - 0.01) * Cylinder(1.6, TOP_T - 0.6, align=BASE)
+    # light pipe: clear filament from the top face down to just above the user LED
+    p["pipe"] = light_pipe(*led_xy, BASE_T + 5.2 + 0.6, H)
+    shell -= p["pipe"]
 
     tpu, caps, cut = keypad(H, Circle(PANEL_R), [(Circle(CAP_R), (0, 0), 3.0, STEM_Z)])
     shell -= cut
@@ -95,7 +106,68 @@ def build():
     p["base"], p["grip"] = base, grip
     p["screws"] = screws[0] + screws[1] + screws[2] + screws[3]
     p.update(wiring(kloc, sw_z))
+    merge_feedback(p, feedback_wiring(kloc))
     return p
+
+
+def feedback_wiring(kloc):
+    """Accelerometer, motor driver and USB sense: the wires added for feedback.
+
+    The accelerometer's five wires run from the kit as a flat ribbon down the left
+    of the switch at the ribbon height, fan out over the board in pin order and drop
+    onto its header. Wires that must cross the ribbon do it 1.1 mm higher (zx).
+    The motor driver sits on the floor right of the kit; the motor beside the switch.
+    """
+    zl, zx = 10.9, 12.0
+    pd = {n: pad(kloc, n) for n in ("D2", "D3", "D4", "D5", "3V3", "5V", "GND")}
+    _, ap = accel_board(*ACCEL_AT)
+    row = ap["INT"][1]
+    top = ap["INT"][2]
+    dx, dy = DRIVER_AT
+    d_in = dy + 5.0                    # driver's +Y face: D3, 3V3, GND
+    d_out = dy - 5.0                   # -Y face: the motor's two leads
+    mx, my = MOTOR_AT
+    zd = BASE_T + 2.5                  # wire height at the driver
+    zm = BASE_T + 1.5                  # at the motor's edge
+
+    def drop(x, y):                    # from the ribbon down onto a header hole
+        return [(x, y, zl), (x, row, zl), (x, row, top)]
+
+    def ribbon(src, lane, turn, dest):
+        return [src, (src[0], src[1], zl), (lane, src[1], zl), (lane, turn, zl), (dest, turn, zl)] + drop(dest, turn)[1:]
+
+    bus = wire(ribbon(pd["D2"], -3.4, -7.0, ap["INT"][0]),
+               ribbon(pd["D4"], -4.3, -7.9, ap["SDA"][0]),
+               ribbon(pd["D5"], -5.2, -8.8, ap["SCL"][0]))
+    v3, v5 = pd["3V3"], pd["5V"]
+    supply = wire(
+        [v3, (v3[0], v3[1], zl), (v3[0], 12.0, zl), (v3[0], 12.0, zx), (-7.0, 12.0, zx), (-7.0, 12.0, zl),
+         (-7.0, -10.6, zl), (ap["3Vo"][0], -10.6, zl)] + drop(ap["3Vo"][0], -10.6)[1:],
+        [(v3[0], v3[1], zl), (dx, v3[1], zl), (dx, v3[1], zd), (dx, d_in, zd)],
+        [v5, (v5[0], v5[1], zx), (v5[0], 30.8, zx), (-11.6, 30.8, zx), (-11.6, 30.8, 9.5), (-11.6, 28.0, 9.5)])
+    g = pd["GND"]
+    black = wire(
+        [(2.5, 10.0, zl), (2.5, 10.0, zx), (-6.1, 10.0, zx), (-6.1, 10.0, zl), (-6.1, -9.7, zl),
+         (ap["GND"][0], -9.7, zl)] + drop(ap["GND"][0], -9.7)[1:],
+        [(g[0], g[1], zl), (dx + 2.0, g[1], zl), (dx + 2.0, g[1], zd), (dx + 2.0, d_in, zd)])
+    d3 = pd["D3"]
+    signal = wire([d3, (d3[0], d3[1], zx), (dx - 2.0, d3[1], zx), (dx - 2.0, d3[1], zd), (dx - 2.0, d_in, zd)])
+    edge = lambda x: my + ((5.0 ** 2) - (x - mx) ** 2) ** 0.5          # motor rim, +Y side
+    leads = wire(*[[(x, d_out, zm), (x, edge(x), zm)] for x in (mx - 1.5, mx + 1.5)])
+    sense = wire([(-11.6, 22.0, 9.5), (-11.6, 21.0, 9.5), (-11.6, 21.0, 7.9)])
+    return {"bus": bus, "supply": supply, "black": black, "signal": signal, "leads": leads, "sense": sense,
+            "driver": driver(dx, dy, BASE_T + 0.05), "r-usb": resistor_y(-11.6, 22.0, 28.0, 9.5)}
+
+
+def merge_feedback(p, fb):
+    if "bus" in fb:
+        p["wire-bus"] = fb["bus"]
+    p["wire-supply"], p["wire-motor"] = fb["supply"], fb["leads"]
+    p["wire-black"] += fb["black"]
+    p["wire-signal"] += fb["signal"]
+    p["wire-sense"] += fb["sense"]
+    p["divider"] += fb["r-usb"]
+    p["driver"] = fb["driver"]
 
 
 def wiring(kloc, sw_z):
@@ -178,6 +250,15 @@ def export(p):
             description="TPU foot ring underneath, and two strips that pinch the kit.", notes=[PRINT_BASE])
     asm.add("screws", p["screws"], "M2 x 8 thread-forming screws (4)", material="Steel", color="#7d838c",
             explode=(0, 0, -12), description="Into the shell's bosses.", source="bought")
+    asm.add("accel", p["accel"], "Accelerometer (MSA311 board)", color="#1b1b1f", mass_g=1.7, mpn="5309",
+            explode=(0, 0, 12), source="bought",
+            description="Adafruit 5309, on 0.5 mm foam tape on the cell. Wakes the puck when it is moved.",
+            notes=["EST: header pin order"])
+    asm.add("motor", p["motor"], "Vibration motor", color="#b9bec5", mass_g=0.9, mpn="1201", source="bought",
+            description="Adafruit 1201, 10 mm coin. Stuck to the base: one buzz when Home Assistant has the press.")
+    asm.add("pipe", p["pipe"], "Light pipe", material="PLA", color="#dfe9ee", explode=(0, 0, 40),
+            description="Clear PLA, part of the top print. Carries the XIAO's user LED to the top face.",
+            notes=[PRINT_TOP, "EST: LED position"])
     wiring_parts(asm, p, "the switch")
     asm.export()
 
@@ -194,10 +275,23 @@ def wiring_parts(asm, p, button):
     asm.add("wire-sense", p["wire-sense"], "Battery sense (D0)", color="#e8e6df", mass_g=0.1,
             description="The divider's middle to D0, with the capacitor's other leg.", **w)
     asm.add("wire-signal", p["wire-signal"], "Button wires", color="#e3b232", mass_g=0.2,
-            description=f"D1 - D5 to {button}." if button != "the switch" else "D1 to the switch.", **w)
-    asm.add("divider", p["divider"], "Battery divider: 2 x 1 MOhm + 100 nF", color="#c9a66b", mass_g=0.6,
-            description="Two resistors in series from BAT+ to ground, the capacitor across the lower one.",
+            description=(f"D1 - D5 to {button}" if button != "the switch" else "D1 to the switch")
+                        + ", and the motor drive line to the driver.", **w)
+    asm.add("divider", p["divider"], "Battery and USB sense: 1M, 1M, 2.2M, 100 nF", color="#c9a66b", mass_g=0.7,
+            description="1M + 1M from BAT+ to ground with the capacitor across the lower one; 2.2M from the "
+                        "5V pad to the middle, so USB power lifts D0 clear of any battery reading.",
             **{**w, "notes": ["EST: body sizes"]})
+    asm.add("wire-supply", p["wire-supply"], "Supply wires (3V3, 5V)", color="#e07b2a", mass_g=0.2,
+            description="3V3 to the motor driver" + (" and the accelerometer" if "wire-bus" in p else "")
+                        + "; 5V to the USB-sense resistor.", **w)
+    asm.add("wire-motor", p["wire-motor"], "Motor leads", color="#8a5cc2", mass_g=0.05,
+            description="Driver to the vibration motor.", **w)
+    if "wire-bus" in p:
+        asm.add("wire-bus", p["wire-bus"], "Accelerometer wires", color="#3f7fd0", mass_g=0.15,
+                description="SDA (D4), SCL (D5) and INT (D2) to the accelerometer's header.", **w)
+    asm.add("driver", p["driver"], "Motor driver, in heat-shrink", color="#2f3a4a", mass_g=0.5,
+            description="PN2222A transistor, 1k base resistor, 1M base pull-down and a 1N4148 across the "
+                        "motor, soldered together and sleeved.", **{**w, "notes": ["EST: size of the bundle"]})
 
 
 if __name__ == "__main__":

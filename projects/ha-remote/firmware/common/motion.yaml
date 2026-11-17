@@ -1,0 +1,33 @@
+# Accelerometer: Adafruit MSA311 breakout on I2C (address 0x62). Puck only.
+# Awake, ESPHome reads it and a double tap counts as button 2. Asleep, the chip
+# sits in low-power mode (2 uA typ) watching for motion; its INT pin, open-drain
+# and active low, is a wake pin. A wake by motion starts Wi-Fi straight away and
+# waits idle_window for a press, so the press is reported sooner.
+# Register values: MSA311 datasheet v1.1 (MEMSensing). Untested on hardware.
+
+i2c:
+  sda: ${sda_pin}
+  scl: ${scl_pin}
+  frequency: 400kHz
+
+msa3xx:
+  id: accel
+  type: msa311
+  range: 2G
+  update_interval: never
+  on_double_tap:
+    - script.execute: { id: handle_press, button: 2 }
+
+script:
+  - id: accel_sleep
+    then:
+      - lambda: |-
+          auto *a = id(accel);
+          a->write_byte(0x16, 0x07);   // INT_SET_0: active (any-motion) on X, Y, Z only
+          a->write_byte(0x19, 0x04);   // INT_MAP_0: active -> INT1
+          a->write_byte(0x20, 0x02);   // INT_CONFIG: INT1 open-drain, active low
+          a->write_byte(0x27, 0x00);   // ACTIVE_DUR: 1 ms
+          a->write_byte(0x28, ${motion_threshold});   // ACTIVE_TH, 3.91 mg per step at 2G
+          a->write_byte(0x21, 0x87);   // INT_LATCH: latched, and clear what is pending
+          a->write_byte(0x10, 0x07);   // ODR: 125 Hz, all axes
+          a->write_byte(0x11, 0x46);   // POWER_MODE: low power, 3.9 Hz bandwidth

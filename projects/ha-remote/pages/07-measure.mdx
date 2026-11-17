@@ -19,6 +19,8 @@ the rest.
 | 6 mm switch height (bar, B3F-1020) | 5.0 mm ± 0.2 (datasheet) | Stem gap, 0.2 mm |
 | FPC antennas | 35 × 9 and 45 × 10 mm | Fit on the wall |
 | Where the battery pads are with the Wio board fitted | Reachable | Wiring |
+| XIAO user LED position (GPIO21) | 7 mm from the board's centre toward USB, 6 mm to the side | The light pipe must sit over it |
+| MSA311 board: header pin order, and any power LED | Vin, 3Vo, GND, SCL, SDA, INT; no LED | Wiring; an LED would draw more than the whole remote asleep |
 
 The stem gaps are the numbers to get right. Too large, and the button rolls its
 channel without clicking. Too small, and the switch is pressed all the time and
@@ -42,5 +44,9 @@ height to vary by more than the 0.2 mm gap, so measure the switches that arrive.
 | Press, Wi-Fi | USB power meter, or a scope on a shunt | ~3 s awake, ~0.08 mAh |
 | Press to event in Home Assistant | Stopwatch, or the logbook | ~2.5 s |
 | Radio asleep | Sleep current with and without the cold-sleep line | ~0.6 mA difference |
+| Accelerometer asleep | Sleep current with the board connected and not | ~2 µA difference. Much more means the regulator or an LED is drawing; feed 3Vo and remove the LED |
+| USB sense | Read D0 on battery, then on USB | Under 1.71 V, then over 2.15 V |
+| Feedback | Press with Wi-Fi on, then off | One buzz, then three |
+| Wake on motion | Pick the puck up, watch the log | Wakes; sleeps again after 4 s |
 | Wake on every button | Press each one, watch the event's `button` | 1 to 5 |
 | Wi-Fi and LoRa range with the antennas inside | Walk around with it | Unknown |

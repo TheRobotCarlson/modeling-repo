@@ -38,6 +38,32 @@ The two FPC antennas curl around the inside of the wall, left and right, away fr
 the battery. **Show wiring**, under the model, adds every wire and the battery
 divider; [wiring](../wiring/) explains the routes.
 
+## Feedback and motion
+
+**One buzz and a blink mean Home Assistant has the press; three short ones mean it
+did not.** A 10 mm coin motor on the floor gives the buzz. The XIAO's own LED gives the
+light, carried to the top face by a pipe of clear filament printed with the shell.
+
+**An accelerometer on top of the cell wakes the puck when it is picked up.** It starts
+joining Wi-Fi straight away, so a press that follows is reported sooner, and a
+double tap on the case counts as a second button.
+
+<details>
+<summary>The detail</summary>
+
+- The motor runs from 3V3 through a transistor on D3, about 60 mA for 0.12 s.
+  The transistor, its two resistors and a diode are soldered into one small bundle
+  in heat-shrink, on the floor beside the kit.
+- The accelerometer is Adafruit's MSA311 board, held to the cell with foam tape.
+  Asleep it draws about 2 µA (datasheet, typical) and pulls D2 low when it is moved.
+  The board's regulator and any power LED would draw more than that, so it is fed
+  on its 3Vo pin. See [what to measure](../measure/).
+- A pick-up without a press costs about 0.11 mAh: more than a press. If the puck
+  is moved often, turn wake-on-motion off (see [firmware](../firmware/)).
+- The light pipe is 2.5 mm across. Its position over the LED is estimated.
+
+</details>
+
 ## Printing
 
 1. **Top: shell, TPU ring and cap in one print, top face down.** The top is flat

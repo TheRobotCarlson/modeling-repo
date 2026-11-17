@@ -1,11 +1,14 @@
 # The bar: five buttons. Main = D1 (GPIO2), keys 1-4 = D2..D5 (GPIO3..GPIO6).
-# Events carry button 1 (main) to 5 (key 4).
+# Events carry button 1 (main) to 5 (key 4). Feedback motor on D6 (GPIO43); D7 is
+# the last free pin. No accelerometer: an I2C bus would need two pins.
 substitutions:
   name: remote-bar
   friendly_name: Remote bar
   remote_id: "2"
   static_ip: 192.168.1.232
   wake_pins: "2, 3, 4, 5, 6"
+  motor_pin: GPIO43
+  idle_window: 0s
 
 packages:
   kit: !include common/kit.yaml
@@ -48,37 +51,34 @@ binary_sensor:
     id: b1
     pin: { number: GPIO2, allow_other_uses: true, inverted: true, mode: { input: true, pullup: true } }
     on_press:
-      - globals.set: { id: pressed, value: "1" }
-      - script.execute: report
+      - script.execute: { id: handle_press, button: 1 }
   - platform: gpio
     id: b2
     pin: { number: GPIO3, allow_other_uses: true, inverted: true, mode: { input: true, pullup: true } }
     on_press:
-      - globals.set: { id: pressed, value: "2" }
-      - script.execute: report
+      - script.execute: { id: handle_press, button: 2 }
   - platform: gpio
     id: b3
     pin: { number: GPIO4, allow_other_uses: true, inverted: true, mode: { input: true, pullup: true } }
     on_press:
-      - globals.set: { id: pressed, value: "3" }
-      - script.execute: report
+      - script.execute: { id: handle_press, button: 3 }
   - platform: gpio
     id: b4
     pin: { number: GPIO5, allow_other_uses: true, inverted: true, mode: { input: true, pullup: true } }
     on_press:
-      - globals.set: { id: pressed, value: "4" }
-      - script.execute: report
+      - script.execute: { id: handle_press, button: 4 }
   - platform: gpio
     id: b5
     pin: { number: GPIO6, allow_other_uses: true, inverted: true, mode: { input: true, pullup: true } }
     on_press:
-      - globals.set: { id: pressed, value: "5" }
-      - script.execute: report
+      - script.execute: { id: handle_press, button: 5 }
 
 script:
   - id: go_to_sleep
     mode: single
     then:
+      - script.wait: feedback_ok
+      - script.wait: feedback_fail
       - wait_until:
           condition:
             and:

@@ -21,7 +21,9 @@ USABLE = 0.85             # stop at ~3.5 V to keep the cell healthy
 SLEEP_UA = {
     "xiao_deep_sleep": 14.0,      # SOURCE: Seeed wiki, XIAO ESP32S3 deep sleep at 3.8 V
     "sx1262_sleep": 0.6,          # SOURCE: ESPHome sx126x docs, sleep after set_mode_sleep
-    "battery_divider": 2.0,       # 2 x 1 MOhm across ~4 V
+    "sense_divider": 2.4,         # 1M + (1M || 2.2M) across ~4 V; the 2.2M is the USB sense
+    "accelerometer": 2.0,         # SOURCE: MSA311 datasheet, low-power mode, typ. Puck only:
+                                  # the bar has none and sleeps 2 uA lower.
     "cell_protection": 3.0,       # EST: typical protection IC on the cell
     "self_discharge": CAPACITY_MAH * 0.03 / 730 * 1000,   # EST: 3 %/month, as an equivalent current
 }
@@ -32,7 +34,16 @@ WIFI_PRESS = [
     ("boot", 0.35, 45),           # EST: ROM + bootloader + ESPHome setup
     ("join Wi-Fi", 1.0, 110),     # EST: fast_connect + static IP, no DHCP
     ("API + event", 1.2, 90),     # EST: Home Assistant connects, event fired
-    ("linger", 0.5, 90),          # let the event leave before sleeping
+    ("buzz", 0.12, 90 + 60),      # feedback: motor on 3V3, 60 mA at 3 V (SOURCE: Adafruit 1201)
+    ("linger", 0.38, 90),         # the LED stays lit (~2 mA, EST, left out) as the event leaves
+]
+
+# The puck wakes when it is moved, joins Wi-Fi and waits idle_window (4 s from boot)
+# for a press. A pick-up without a press costs this much.
+MOTION_WAKE = [
+    ("boot", 0.35, 45),
+    ("join Wi-Fi", 1.0, 110),
+    ("wait for a press", 3.0, 90),
 ]
 
 
@@ -49,6 +60,8 @@ LORA_PRESS = [
     ("boot", 0.35, 45),           # EST: same boot, no Wi-Fi at all
     ("radio setup", 0.05, 45),    # EST
     ("transmit", AIRTIME, 45 + 45),   # EST: ~45 mA radio at +14 dBm, plus the ESP32
+    ("buzz", 0.12, 45 + 60),
+    ("blink", 0.2, 45),
     ("sleep the radio", 0.02, 45),
 ]
 
@@ -106,5 +119,38 @@ save_series(
             "sleep_only_days": round(usable / per_day_sleep),
             "wifi_10_per_day_days": round(float(days(wifi_mah)[9])),
             "lora_10_per_day_days": round(float(days(lora_mah)[9])),
-            "radio_left_in_standby_days": round(float(days(wifi_mah, trap)[9]))},
+            "radio_left_in_standby_days": round(float(days(wifi_mah, trap)[9])),
+            "motion_wake_mAh": round(charge_mah(MOTION_WAKE), 3),
+            "wifi_10_presses_10_pickups_days": round(float(days(wifi_mah, per_day_sleep + 10 * charge_mah(MOTION_WAKE))[9]))},
+)
+
+# --- chart 3: the optional sensor module ---------------------------------------------
+# A separate kit with an SHT40, waking on a timer to report temperature and humidity.
+# Same sleep as a remote, minus the USB sense and accelerometer; the sensor board is
+# powered from a GPIO only while it measures, so it adds nothing asleep.
+SENSOR_SLEEP_UA = (SLEEP_UA["xiao_deep_sleep"] + SLEEP_UA["sx1262_sleep"] + 2.0
+                   + SLEEP_UA["cell_protection"] + SLEEP_UA["self_discharge"])
+SENSOR_READ = [("power the sensor and read", 0.02, 45 + 0.4)]   # SHT40 high precision: ~10 ms (EST)
+WIFI_REPORT = [p for p in WIFI_PRESS if p[0] != "buzz"] + SENSOR_READ
+LORA_REPORT = [p for p in LORA_PRESS if p[0] not in ("buzz", "blink")] + SENSOR_READ
+minutes = np.arange(5, 61, 1)
+per_day_sensor = SENSOR_SLEEP_UA * 24 / 1000
+
+
+def sensor_days(phases):
+    return usable / (per_day_sensor + (24 * 60 / minutes) * charge_mah(phases))
+
+
+wifi_s, lora_s = sensor_days(WIFI_REPORT), sensor_days(LORA_REPORT)
+at = lambda arr, m: round(float(arr[minutes == m][0]))
+save_series(
+    "ha-remote", "sensor", minutes,
+    {"LoRa": lora_s, "Wi-Fi": wifi_s},
+    title="Sensor module: days between charges, by minutes between reports",
+    x_label="minutes between reports", y_label="days per charge",
+    params={"battery_mAh": CAPACITY_MAH, "sleep_current_uA": round(SENSOR_SLEEP_UA, 1),
+            "wifi_report_mAh": round(charge_mah(WIFI_REPORT), 4),
+            "lora_report_mAh": round(charge_mah(LORA_REPORT), 4),
+            "wifi_every_10_min_days": at(wifi_s, 10), "lora_every_10_min_days": at(lora_s, 10),
+            "wifi_every_30_min_days": at(wifi_s, 30), "lora_every_30_min_days": at(lora_s, 30)},
 )

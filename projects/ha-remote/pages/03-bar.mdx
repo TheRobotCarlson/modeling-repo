@@ -28,6 +28,31 @@ to the keys, and the battery leads straight into the kit. See [wiring](../wiring
 Caps are separate colours in the same print. Swap the colours to suit what the
 buttons do.
 
+## Feedback
+
+**The same buzz and blink as the puck: once when Home Assistant has the press,
+three times when it did not.** The motor and its driver sit on top of the cell,
+under the keys, and the light pipe rises over the XIAO's LED.
+
+**The bar has no accelerometer, because it has no pins left.** The five buttons,
+the radio and the battery take nine of the XIAO's eleven edge pins, and the motor a
+tenth. An accelerometer needs two more for its bus, plus a wake line.
+
+<details>
+<summary>Ways to add one later</summary>
+
+The bus needs two pins:
+
+- **Give up one key.** Its pin and D7 become the bus.
+- **Or move the motor to an I2C port expander.** D6 and D7 become the bus for the
+  expander and the accelerometer. It costs about a microamp asleep, and more wiring.
+
+In both cases the accelerometer's interrupt, set to open-drain, shares the main
+button's line, and the firmware tells a press from a movement by asking the chip
+after it wakes.
+
+</details>
+
 ## Holding the base on
 
 **Screws alone would let the far end of the base bend away when the top buttons are

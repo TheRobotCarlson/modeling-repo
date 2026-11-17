@@ -23,34 +23,40 @@ ota:
 
 binary_sensor:
   # Turn this helper on in Home Assistant to keep remotes awake for OTA updates.
+  # Plugging a remote into USB does the same (see usb_power in kit.yaml).
   - platform: homeassistant
     id: stay_awake
     entity_id: input_boolean.remotes_stay_awake
+    on_press:
+      - deep_sleep.prevent: sleeper
+    on_release:
+      - deep_sleep.allow: sleeper
+      - script.execute: go_to_sleep
+  - id: !extend usb_power
+    on_press:
+      - deep_sleep.prevent: sleeper
+    on_release:
+      - deep_sleep.allow: sleeper
+      - script.execute: go_to_sleep
 
 script:
-  - id: report
-    mode: queued
+  - id: send_press
+    mode: single
     then:
+      - wait_until:
+          condition: api.connected
+          timeout: 8s
       - if:
-          condition:
-            lambda: "return id(pressed) > 0;"
+          condition: api.connected
           then:
-            - component.update: vbat
-            - wait_until:
-                condition: api.connected
-                timeout: 8s
-            - if:
-                condition: api.connected
-                then:
-                  - homeassistant.event:
-                      event: esphome.remote_button
-                      data:
-                        remote: ${name}
-                        button: !lambda "return to_string(id(pressed));"
-                        battery_v: !lambda 'return str_sprintf("%.2f", id(vbat).state);'
-                  - delay: 300ms
-      - if:
-          condition:
-            binary_sensor.is_off: stay_awake
-          then:
-            - script.execute: go_to_sleep
+            - homeassistant.event:
+                event: esphome.remote_button
+                data:
+                  remote: ${name}
+                  button: !lambda "return to_string(id(sending));"
+                  battery_v: !lambda 'return str_sprintf("%.2f", id(vbat).state);'
+            - script.execute: feedback_ok
+            - delay: 300ms
+          else:
+            - script.execute: feedback_fail
+            - delay: 600ms

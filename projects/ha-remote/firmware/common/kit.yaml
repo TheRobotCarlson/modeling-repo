@@ -1,11 +1,17 @@
 # XIAO ESP32S3 + Wio-SX1262 as a sleeping remote. Shared by puck.yaml and bar.yaml.
-# Expects substitutions: name, friendly_name, wake_pins ("2, 3, ..." GPIO numbers).
+# Expects substitutions: name, friendly_name, wake_pins ("2, 3, ..." GPIO numbers),
+# motor_pin, idle_window (how long to wait for a press after a wake with no press).
+# Each device file defines the deep_sleep and buttons; the link file (wifi.yaml or
+# lora.yaml) defines the script `send_press`, which reports id(sending).
 #
 # Pins (Meshtastic variant seeed_xiao_s3, Seeed wiki):
 #   SX1262  SCK 7, MISO 8, MOSI 9, NSS 41, RESET 42, BUSY 40, DIO1 39; DIO2 drives
 #           the RF switch; TCXO at 1.8 V on DIO3
-#   battery D0 = GPIO1 through a 1M/1M divider (the plain XIAO has no battery sense)
+#   D0 = GPIO1 reads the battery through a 1M/1M divider, plus 2.2M from the 5V pad
+#           so USB power lifts it clear of any battery-only reading (see `sense`)
 #   buttons D1..D5 = GPIO2..GPIO6, switch to GND, RTC pull-ups
+#   feedback: vibration motor through an NPN transistor on ${motor_pin}; the XIAO's
+#           own user LED on GPIO21 (active low), seen through a printed light pipe
 
 esphome:
   name: ${name}
@@ -22,6 +28,7 @@ esphome:
       # Every sleep starts by putting it in cold sleep.
       - sx126x.set_mode_sleep:
           cold: true
+      - output.turn_off: motor
       - lambda: "rtc_pullups::enable({${wake_pins}});"
 
 esp32:
@@ -32,9 +39,13 @@ esp32:
 
 logger:
   level: INFO
+  hardware_uart: USB_SERIAL_JTAG   # keep GPIO43/44 (D6/D7) free for the build
 
 globals:
   - id: pressed          # which button woke us or was pressed last; 0 = none
+    type: int
+    initial_value: "0"
+  - id: sending          # the press being reported now
     type: int
     initial_value: "0"
 
@@ -64,14 +75,93 @@ sx126x:
   pa_power: 14
   rx_start: false
 
+output:
+  - platform: gpio
+    id: motor
+    pin: ${motor_pin}
+  - platform: gpio
+    id: led
+    pin: { number: GPIO21, inverted: true }
+
+# D0 sees the cell through 1M (top) and 1M (bottom), and the 5V pad through 2.2M.
+# Unplugged, 5V is 0 V and D0 = Vbat / 2.45: 1.22 - 1.71 V. On USB, D0 =
+# (Vbat + 5 / 2.2) / 2.45: 2.15 - 2.64 V. Anything over 1.93 V means USB power.
 sensor:
   - platform: adc
-    id: vbat
-    name: Battery
+    id: sense
     pin: GPIO1
     attenuation: 12db
     samples: 8
-    update_interval: never
+    update_interval: 2s
+    internal: true
+  - platform: template
+    id: vbat
+    name: Battery
+    unit_of_measurement: V
+    device_class: voltage
     accuracy_decimals: 2
-    filters:
-      - multiply: 2.0
+    update_interval: never
+    lambda: |-
+      float v = id(sense).state;
+      return v > 1.93f ? v * 2.4545f - 2.2727f : v * 2.4545f;
+
+binary_sensor:
+  - platform: template
+    id: usb_power
+    name: On USB power
+    lambda: "return id(sense).state > 1.93f;"
+
+script:
+  # A wake with no press (motion) waits idle_window for one. Every press made while
+  # awake is reported in turn, then the remote sleeps.
+  - id: report
+    mode: single
+    then:
+      - wait_until:
+          condition:
+            lambda: "return id(pressed) > 0;"
+          timeout: ${idle_window}
+      - while:
+          condition:
+            lambda: "return id(pressed) > 0;"
+          then:
+            - component.update: sense
+            - component.update: vbat
+            - lambda: "id(sending) = id(pressed); id(pressed) = 0;"
+            - script.execute: send_press
+            - script.wait: send_press
+      - script.execute: go_to_sleep
+  - id: handle_press
+    mode: queued
+    parameters: { button: int }
+    then:
+      - lambda: "id(pressed) = button;"
+      - if:
+          condition:
+            not:
+              script.is_running: report
+          then:
+            - script.execute: report
+  # Feedback: one short buzz and blink = Home Assistant took it (Wi-Fi) or it was
+  # sent (LoRa); three = it was not.
+  - id: feedback_ok
+    mode: restart
+    then:
+      - output.turn_on: motor
+      - output.turn_on: led
+      - delay: 120ms
+      - output.turn_off: motor
+      - delay: 200ms
+      - output.turn_off: led
+  - id: feedback_fail
+    mode: restart
+    then:
+      - repeat:
+          count: 3
+          then:
+            - output.turn_on: motor
+            - output.turn_on: led
+            - delay: 80ms
+            - output.turn_off: motor
+            - output.turn_off: led
+            - delay: 120ms

@@ -10,17 +10,14 @@ globals:
     initial_value: "0"
 
 script:
-  - id: report
-    mode: queued
+  # No acknowledgement comes back, so feedback means "sent", not "received".
+  - id: send_press
+    mode: single
     then:
-      - if:
-          condition:
-            lambda: "return id(pressed) > 0;"
-          then:
-            - component.update: vbat
-            - lambda: |-
-                uint16_t mv = (uint16_t) (id(vbat).state * 1000.0f);
-                id(seq) += 1;
-                id(radio).transmit_packet({0xA5, ${remote_id}, (uint8_t) id(pressed),
-                                           (uint8_t) (mv >> 8), (uint8_t) (mv & 0xFF), id(seq)});
-      - script.execute: go_to_sleep
+      - lambda: |-
+          uint16_t mv = (uint16_t) (id(vbat).state * 1000.0f);
+          id(seq) += 1;
+          id(radio).transmit_packet({0xA5, ${remote_id}, (uint8_t) id(sending),
+                                     (uint8_t) (mv >> 8), (uint8_t) (mv & 0xFF), id(seq)});
+      - script.execute: feedback_ok
+      - delay: 200ms

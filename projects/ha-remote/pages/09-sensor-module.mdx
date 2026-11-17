@@ -1,0 +1,55 @@
+---
+title: Sensor module (optional)
+summary: A separate battery temperature and humidity node on the same kit. Specified, not designed.
+---
+
+**An optional third device: the same radio kit, an SHT40 sensor and a cell,
+waking on a timer to report temperature and humidity.** It is kept out of the remotes
+on purpose. A sensor inside something held in the hand reads the hand, and
+reporting on a timer would cost the remotes most of their battery. This page is a
+spec: no CAD and no firmware yet.
+
+## How long it lasts
+
+<Chart sim="sensor" />
+
+**On LoRa, reporting every ten minutes lasts about six months per charge. On Wi-Fi
+it lasts under a month.** Each Wi-Fi report has to join the network and wait for
+Home Assistant, and that costs twelve times a LoRa packet. On Wi-Fi, report
+every 30 minutes or more, or power it from USB.
+
+<Params sim="sensor" />
+
+## What it needs
+
+| Part | Why | Link |
+|---|---|---|
+| Wio-SX1262 with XIAO ESP32S3 kit | Same board as the remotes, so the same firmware base | [Seeed](https://www.seeedstudio.com/Wio-SX1262-with-XIAO-ESP32S3-p-5982.html) |
+| SHT40 breakout, Adafruit 4885 | ±0.2 °C, ±1.8 %RH; ESPHome's `sht4x` reads it. $5.95 | [Adafruit](https://www.adafruit.com/product/4885) |
+| LiPo cell, Adafruit 2750 | Same cell as the remotes | [Adafruit](https://www.adafruit.com/product/2750) |
+| 2 × 1 MΩ, 100 nF | Battery divider on D0, as in the remotes | See [parts](../parts/) |
+
+A LoRa build also needs the [gateway](../firmware/), which the remotes can share.
+
+<details>
+<summary>The spec</summary>
+
+- **Power the sensor from a pin.** Feed the SHT40 board from a GPIO, switched on
+  only to take a reading. The board's regulator and any power LED then draw nothing
+  asleep, and the sleep current stays at about 34 µA (self-discharge included),
+  the same as a remote without its extras.
+- **Pins.** I2C on D4 and D5, sensor power on D3, battery on D0. No buttons and no
+  wake pins: a timer wakes it (`deep_sleep` with `sleep_duration`).
+- **Report.** Over LoRa, a new packet type: marker 0xA6, node id, temperature ×100
+  (signed 16 bits), humidity ×100, battery mV and a sequence number, 9 bytes. The
+  gateway's packet length is fixed at 6 bytes today, so the gateway config has to
+  change to accept both. Over Wi-Fi, plain ESPHome sensors.
+- **Enclosure.** The sensor sits behind vents, away from the board and the cell,
+  which warm up while awake. A printed louvred case with the SHT40 at the top, or on
+  a short lead outside, both work. Not designed yet.
+- **The model behind the chart.** The remotes' sleep current without the USB sense
+  resistor and the accelerometer, plus one report per interval. A report is a
+  remote's press without the buzz, plus about 20 ms to power and read the sensor.
+  `physics/power.py`, chart 3.
+
+</details>

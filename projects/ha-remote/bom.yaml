@@ -40,13 +40,13 @@ items:
     notes: Bar
   - ref: r-div
     description: Resistor, 1 MOhm 5 % 1/4 W carbon film, axial
-    qty: 4
+    qty: 6
     manufacturer: Yageo
     mpn: CFR-25JB-52-1M
     supplier: DigiKey
     url: https://www.digikey.com/en/products/detail/yageo/CFR-25JB-52-1M/99
     unit_cost:
-    notes: Battery divider, two per remote
+    notes: Per remote, two for the battery divider and one as the motor driver's base pull-down
   - ref: c-div
     description: Capacitor, 100 nF 50 V X7R ceramic, radial
     qty: 2
@@ -56,6 +56,60 @@ items:
     url: https://www.digikey.com/en/products/detail/kemet/C320C104K5R5TA/818040
     unit_cost:
     notes: Across the lower divider resistor
+  - ref: r-usb
+    description: Resistor, 2.2 MOhm 5 % 1/4 W carbon film, axial
+    qty: 2
+    manufacturer: Yageo
+    mpn: CFR-25JB-52-2M2
+    supplier: DigiKey
+    url: https://www.digikey.com/en/products/result?keywords=CFR-25JB-52-2M2
+    unit_cost:
+    notes: USB sense, 5V pad to D0. Search link; product page not checked.
+  - ref: r-base
+    description: Resistor, 1 kOhm 5 % 1/4 W carbon film, axial
+    qty: 2
+    manufacturer: Yageo
+    mpn: CFR-25JB-52-1K
+    supplier: DigiKey
+    url: https://www.digikey.com/en/products/result?keywords=CFR-25JB-52-1K
+    unit_cost:
+    notes: Motor driver base resistor. Search link; product page not checked.
+  - ref: q-motor
+    description: NPN transistor, 40 V 1 A, TO-92
+    qty: 2
+    manufacturer: onsemi
+    mpn: PN2222ABU
+    supplier: DigiKey
+    url: https://www.digikey.com/en/products/detail/onsemi/PN2222ABU/6534
+    unit_cost:
+    notes: Switches the vibration motor
+  - ref: d-motor
+    description: Diode, 100 V 200 mA small-signal, DO-35
+    qty: 2
+    manufacturer: onsemi
+    mpn: 1N4148
+    supplier: DigiKey
+    url: https://www.digikey.com/en/products/detail/onsemi/1N4148/458603
+    unit_cost:
+    notes: Across the motor, for the spike when it switches off
+  - ref: motor
+    description: Vibrating mini motor disc, 10 mm x 2.7 mm, 2-5 V
+    qty: 2
+    manufacturer: Adafruit
+    mpn: "1201"
+    supplier: Adafruit
+    url: https://www.adafruit.com/product/1201
+    unit_cost:
+    notes: Feedback. About 60 mA at 3 V.
+  - ref: accel
+    description: MSA311 triple-axis accelerometer breakout, STEMMA QT
+    qty: 1
+    manufacturer: Adafruit
+    mpn: "5309"
+    supplier: Adafruit
+    url: https://www.adafruit.com/product/5309
+    unit_cost: 4.50
+    notes: Puck only. Feed it on 3Vo and remove the power LED if it has one (see What to measure).
   - ref: screws
     description: M2 x 8 mm pan-head Phillips thread-forming screw for plastic, 18-8 stainless (pack of 25)
     qty: 1

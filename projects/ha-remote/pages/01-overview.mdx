@@ -5,8 +5,8 @@ summary: Two battery remotes that sleep until pressed, then tell Home Assistant 
 
 **Two remotes on the XIAO ESP32S3 + Wio-SX1262 kit: a puck with one big button,
 and a bar with five.** Each sleeps at about 20 µA, wakes on a press, reports the
-button to Home Assistant through ESPHome, and goes back to sleep. Both charge over
-USB-C.
+button to Home Assistant through ESPHome, and goes back to sleep. A short buzz
+and a blink say the press arrived. Both charge over USB-C.
 
 <Stats>
   <Stat value="72 × 16 mm" label="puck" />
@@ -34,9 +34,23 @@ fills the gaps during the print, so nothing needs assembling but the base.
 
 1. **[The puck](./puck/)**: one 31 mm button over a 12 mm switch. Modeled.
 2. **[The bar](./bar/)**: a main button and four keys. Modeled.
-3. **[Wiring](./wiring/)**: two wires per button, a battery, and two resistors to read its voltage.
-4. **[Firmware](./firmware/)**: ESPHome configs for both, over Wi-Fi or LoRa. Config-checked.
-5. **[Battery life](./power/)**: about 190 days on Wi-Fi, 340 on LoRa, at ten presses a day.
+3. **[Wiring](./wiring/)**: the buttons, the battery, a vibration motor, and three resistors that read both the battery and USB power.
+4. **[Firmware](./firmware/)**: ESPHome configs for both, over Wi-Fi or LoRa. Compiled, not yet run.
+5. **[Battery life](./power/)**: about 180 days on Wi-Fi, 300 on LoRa, at ten presses a day.
+6. **[Sensor module](./sensor-module/)**: an optional, separate temperature and humidity node. Specified only.
+
+<details>
+<summary>What each remote can tell you</summary>
+
+| | Puck | Bar |
+|---|---|---|
+| Buttons | 1 | 5 |
+| Press feedback | Buzz and light | Buzz and light |
+| Wakes when picked up | Yes (accelerometer) | No: out of pins |
+| Double tap on the case | Yes | No |
+| Knows it is on USB power | Yes | Yes |
+
+</details>
 
 <details>
 <summary>Why not just use the radio kit's own button?</summary>

@@ -11,11 +11,11 @@ along the side walls beside the battery.
 
 from build123d import Axis, Box, Circle, Pos, RectangleRounded, Rot, extrude, offset
 
-from _parts import (BASE, BATT_L, CAP_BODY, CELL_W, GAP_Z, KIT_L, KIT_W, LORA_FPC, RES_D, RES_L,
-                    USB_OUT, WIFI_FPC, Z_USB, battery, capacitor, fpc_flat, keypad, kit, pad,
-                    resistor_y, screw_m2, slab, tact, wire)
+from _parts import (BASE, BATT_L, CAP_BODY, CELL_T, CELL_W, GAP_Z, KIT_L, KIT_W, LED_USER, LORA_FPC,
+                    RES_D, RES_L, USB_OUT, WIFI_FPC, Z_USB, battery, capacitor, driver, fpc_flat, keypad,
+                    kit, light_pipe, motor, pad, resistor_y, screw_m2, slab, tact, wire)
 from modelkit import Assembly
-from puck import wiring_parts
+from puck import merge_feedback, wiring_parts
 
 W, L, CORNER = 44.0, 120.0, 14.0
 WALL, TOP_T, BASE_T = 2.0, 2.0, 2.0
@@ -32,6 +32,9 @@ BOSS_R = 2.5
 
 KIT_Y = -(IN_L / 2) + 0.7 + KIT_L / 2 + USB_OUT     # USB face 0.7 mm inside the end wall
 BATT_Y = -15.4
+ON_CELL = BASE_T + CELL_T                  # top of the cell: the motor and driver sit on it
+MOTOR_AT = (2.5, -3.0)
+DRIVER_AT = (6.5, -14.0)
 TONGUE_W = 14.0
 
 
@@ -52,6 +55,8 @@ def build():
     p["switches"] = switches[0] + switches[1] + switches[2] + switches[3] + switches[4]
     p["fpc-wifi"] = fpc_flat(IN_W / 2, -36.0, *WIFI_FPC, 3.0, +1)
     p["fpc-lora"] = fpc_flat(-IN_W / 2, -46.0, *LORA_FPC, 2.5, -1)
+    p["motor"] = motor(*MOTOR_AT, ON_CELL)
+    led = kloc * Pos(*LED_USER, 0)
 
     # --- shell ---------------------------------------------------------------------
     shell = extrude(plan(W, L, CORNER), H)
@@ -68,6 +73,8 @@ def build():
     shell -= port.fillet(1.6, port.edges().filter_by(Axis.Y))
     shell -= Pos(0, IN_L / 2 - 0.2, 0.6) * Box(TONGUE_W + 0.6, 1.8, 1.6, align=(BASE[0], BASE[2], BASE[2]))   # slot for the base's tongue
     shell -= Pos(6.0, KIT_Y - 7.0, H - TOP_T - 0.01) * Cylinder_(1.6, TOP_T - 0.6)          # light window (EST)
+    p["pipe"] = light_pipe(led.position.X, led.position.Y, BASE_T + 5.2 + 0.6, H)          # user LED
+    shell -= p["pipe"]
 
     caps = [(Circle(8.5).moved(Pos(*MAIN)), MAIN, 1.6, STEM_Z)]
     caps += [(RectangleRounded(KEY, KEY, 3.0).moved(Pos(x, y)), (x, y), 1.6, STEM_Z) for x, y in KEYS]
@@ -109,7 +116,35 @@ def build():
         screws = s if screws is None else screws + s
     p["base"], p["grip"], p["screws"] = base, grip, screws
     p.update(wiring(kloc, sw_z))
+    merge_feedback(p, feedback_wiring(kloc))
     return p
+
+
+def feedback_wiring(kloc):
+    """Motor driver on D6 and USB sense; both sit on top of the cell.
+
+    D6 runs straight up the right side of the kit to the driver. 3V3 and GND come
+    from the left pads and cross over the ribbon 1.1 mm higher (zx).
+    """
+    zx, zw = 12.0, ON_CELL + 2.3            # crossing height; wire height at the driver
+    pd = {n: pad(kloc, n) for n in ("D6", "3V3", "5V", "GND")}
+    dx, dy = DRIVER_AT
+    d_in, d_out = dy - 5.0, dy + 5.0        # -Y face toward the kit, +Y face toward the motor
+    mx, my = MOTOR_AT
+    zm = ON_CELL + 1.3
+    d6, v3, v5, g = pd["D6"], pd["3V3"], pd["5V"], pd["GND"]
+    signal = wire([d6, (d6[0], d6[1], 9.0), (d6[0], d_in, 9.0)])
+    supply = wire(
+        [v3, (v3[0], v3[1], zx), (v3[0], d_in - 3.0, zx), (dx - 2.0, d_in - 3.0, zx), (dx - 2.0, d_in - 3.0, zw),
+         (dx - 2.0, d_in, zw)],
+        [v5, (v5[0], v5[1], zx), (v5[0], -54.6, zx), (11.0, -54.6, zx), (11.0, -54.6, 9.6), (11.0, -45.0, 9.6)])
+    black = wire([(g[0], g[1], 10.9), (g[0], g[1], zx), (g[0] - 1.0, g[1], zx), (g[0] - 1.0, d_in - 2.0, zx),
+                  (dx, d_in - 2.0, zx), (dx, d_in - 2.0, zw), (dx, d_in, zw)])
+    edge = lambda x: my - ((5.0 ** 2) - (x - mx) ** 2) ** 0.5          # motor rim, -Y side
+    leads = wire(*[[(x, d_out, zm), (x, edge(x), zm)] for x in (mx + 2.0, mx + 4.0)])
+    sense = wire([(11.0, -39.0, 9.6), (11.0, -38.0, 9.6), (11.0, -38.0, 7.9)])
+    return {"signal": signal, "supply": supply, "black": black, "leads": leads, "sense": sense,
+            "driver": driver(dx, dy, ON_CELL), "r-usb": resistor_y(11.0, -45.0, -39.0, 9.6)}
 
 
 def wiring(kloc, sw_z):
@@ -213,6 +248,11 @@ def export(p):
             description="Four TPU feet, and two strips that pinch the kit.", notes=[PRINT_BASE])
     asm.add("screws", p["screws"], "M2 x 8 thread-forming screws (4)", material="Steel", color="#7d838c",
             explode=(0, 0, -12), description="Two at the bottom end, two beside the keys.", source="bought")
+    asm.add("motor", p["motor"], "Vibration motor", color="#b9bec5", mass_g=0.9, mpn="1201", source="bought",
+            explode=(0, 0, 9), description="Adafruit 1201, 10 mm coin, stuck to the cell under the keys.")
+    asm.add("pipe", p["pipe"], "Light pipe", material="PLA", color="#dfe9ee", explode=(0, 0, up),
+            description="Clear PLA, part of the top print. Carries the XIAO's user LED to the top face.",
+            notes=[PRINT_TOP, "EST: LED position"])
     wiring_parts(asm, p, "each switch")
     asm.export()
 

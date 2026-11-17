@@ -1,14 +1,24 @@
-# The puck: one button on D1 (GPIO2).
+# The puck: one button on D1 (GPIO2), an accelerometer that wakes it when moved,
+# and a vibration motor plus the XIAO's LED for feedback.
+#   D1 GPIO2 button   D2 GPIO3 accelerometer INT   D3 GPIO4 motor
+#   D4 GPIO5 SDA      D5 GPIO6 SCL                 D6, D7 free
+# Events: button 1 = press, 2 = double tap on the puck.
 substitutions:
   name: remote-puck
   friendly_name: Remote puck
   remote_id: "1"
   static_ip: 192.168.1.231     # pick a free address on your network
-  wake_pins: "2"
+  wake_pins: "2, 3"
+  motor_pin: GPIO4
+  sda_pin: GPIO5
+  scl_pin: GPIO6
+  idle_window: 4s              # after a motion wake, how long to wait for a press
+  motion_threshold: "0x14"     # 78 mg; raise it if the puck wakes too easily
 
 packages:
   kit: !include common/kit.yaml
   link: !include common/wifi.yaml      # or common/lora.yaml with a gateway
+  motion: !include common/motion.yaml
 
 deep_sleep:
   id: sleeper
@@ -21,21 +31,25 @@ deep_sleep:
           allow_other_uses: true
         on_wake:
           - globals.set: { id: pressed, value: "1" }
+      - pin: GPIO3                     # moved: nothing pressed yet, so report waits
 
 binary_sensor:
   - platform: gpio
     id: b1
     pin: { number: GPIO2, allow_other_uses: true, inverted: true, mode: { input: true, pullup: true } }
     on_press:
-      - globals.set: { id: pressed, value: "1" }
-      - script.execute: report
+      - script.execute: { id: handle_press, button: 1 }
 
 script:
   - id: go_to_sleep
     mode: single
     then:
+      - script.wait: feedback_ok
+      - script.wait: feedback_fail
       - wait_until:                    # ANY_LOW would wake us straight back up
           condition:
             binary_sensor.is_off: b1
           timeout: 5s
+      - script.execute: accel_sleep
+      - script.wait: accel_sleep
       - deep_sleep.enter: sleeper

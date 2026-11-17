@@ -136,7 +136,11 @@ def keypad(top, panel, caps, groove=2.6, wall=0.8, depth=2.4, cap_t=2.0,
 # The battery pads are under the XIAO, in the gap above the Wio board: EST position.
 PAD_Y = KIT_W / 2 - 0.9
 PADS = {f"D{i}": (7.62 - 2.54 * i, PAD_Y, Z_XIAO_TOP) for i in range(7)}
+PADS["5V"] = (7.62, -PAD_Y, Z_XIAO_TOP)
 PADS["GND"] = (5.08, -PAD_Y, Z_XIAO_TOP)
+PADS["3V3"] = (2.54, -PAD_Y, Z_XIAO_TOP)
+LED_USER = (7.0, -6.0)             # EST: the XIAO's user LED (GPIO21), beside the USB-C port
+LED_CHARGE = (7.0, 6.0)            # EST: its charge LED, on the other side
 PADS["BAT+"] = (4.0, 4.0, WIO_UNDER + PCB + B2B)     # on the XIAO's underside
 PADS["BAT-"] = (6.5, 2.3, WIO_UNDER + PCB + B2B)     # nearer the USB port (Seeed wiki)
 
@@ -180,6 +184,48 @@ def capacitor(x, y, z0):
     return Pos(x, y, z0) * Box(*CAP_BODY, align=BASE)
 
 
+# --- Feedback and sensing parts ------------------------------------------------------
+MOTOR_D, MOTOR_T = 10.0, 2.7       # SOURCE: Adafruit 1201 vibrating mini motor disc
+DRIVER = (6.0, 10.0, 5.0)          # EST: transistor, diode and two resistors soldered
+                                   # together and sleeved in heat-shrink, 6 x 10 x 5 mm
+ACCEL = (25.2, 17.7, 1.6)          # SOURCE: Adafruit 5309 (MSA311) board outline; EST PCB thickness
+QT = (4.25, 6.0, 2.95)             # EST: STEMMA QT (JST SH 4-pin) connector at each end
+
+
+def motor(x, y, z0):
+    """Coin vibration motor lying flat, bottom at z0."""
+    return Pos(x, y, z0) * Cylinder(MOTOR_D / 2, MOTOR_T, align=BASE)
+
+
+def driver(x, y, z0):
+    """The motor driver in its heat-shrink sleeve, long side along Y."""
+    d = Pos(x, y, z0) * Box(*DRIVER, align=BASE)
+    return d.fillet(1.0, d.edges().filter_by(Axis.Y))
+
+
+def accel_board(x, y, z0):
+    """MSA311 breakout, long side along X, header row along its +Y edge.
+
+    Returns (board, pads) where pads maps Vin, 3Vo, GND, SCL, SDA, INT to the top of
+    each header hole. The pin order is EST until checked on the board.
+    """
+    l, w, t = ACCEL
+    b = Pos(x, y, z0) * Box(l, w, t, align=BASE)
+    b += Pos(x, y, z0 + t) * Box(2.0, 2.0, 0.95, align=BASE)                     # the chip
+    for sx in (-1, 1):
+        b += Pos(x + sx * (l / 2 - QT[0] / 2), y, z0 + t) * Box(*QT, align=BASE)
+    names = ["Vin", "3Vo", "GND", "SCL", "SDA", "INT"]
+    pads = {n: (x + (i - 2.5) * 2.54, y + w / 2 - 1.3, z0 + t) for i, n in enumerate(names)}
+    return b, pads
+
+
+PIPE_R = 1.25                      # printed light pipe, clear filament
+
+
+def light_pipe(x, y, z0, z1):
+    return Pos(x, y, z0) * Cylinder(PIPE_R, z1 - z0, align=BASE)
+
+
 def screw_m2(x, y, z_head, length=8.0):
     """M2 x 8 pan-head thread-forming screw for plastic (McMaster 99461A916: head 3.5 x 1.4)."""
     s = Pos(x, y, z_head) * Cylinder(1.75, 1.4, align=BASE)
@@ -188,4 +234,5 @@ def screw_m2(x, y, z_head, length=8.0):
 
 
 __all__ = ["kit", "battery", "tact", "fpc_arc", "fpc_flat", "keypad", "slab", "screw_m2",
-           "wire", "pad", "resistor_y", "capacitor", "Circle", "Rot"]
+           "wire", "pad", "resistor_y", "capacitor", "motor", "driver", "accel_board",
+           "light_pipe", "Circle", "Rot"]

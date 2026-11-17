@@ -41,27 +41,33 @@ def kit():
     return wio, xiao, usb
 
 
-# --- LiPo pouch cell, 502030 class: 5 x 20 x 30 mm + protection board -----------------
-CELL_L, CELL_W, CELL_T = 30.0, 20.0, 5.0     # EST: generic 502030 (~250 mAh)
-CELL_PCB = 3.0                               # EST: protection board folded on the end
-BATT_L = CELL_L + CELL_PCB
+# --- LiPo cell: Adafruit 2750, 3.7 V 350 mAh, protection circuit built in -----------
+BATT_L, CELL_W, CELL_T = 36.0, 19.6, 5.2     # SOURCE: Adafruit product page
 
 
 def battery():
-    """Cell along X, protection board at +X."""
-    cell = Pos(-CELL_PCB / 2, 0, CELL_T / 2) * Box(CELL_L, CELL_W, CELL_T)
-    cell = cell.fillet(1.0, cell.edges().filter_by(Axis.X))
-    pcb = Pos(CELL_L / 2, 0, 2.2) * Box(CELL_PCB, 16, 4.0)
-    return cell + pcb
+    """Cell along X; the lead leaves from the +X end."""
+    cell = Pos(0, 0, CELL_T / 2) * Box(BATT_L, CELL_W, CELL_T)
+    return cell.fillet(1.0, cell.edges().filter_by(Axis.X))
 
 
 # --- Tactile switches ---------------------------------------------------------------
 def tact(size):
-    """Through-hole tact switch, legs trimmed. size 12 -> 12x12x7.3, 6 -> 6x6x5.0 (EST)."""
-    body_h, stem_r, total = {12: (3.6, 3.3, 7.3), 6: (3.5, 1.75, 5.0)}[size]
-    sw = Pos(0, 0, body_h / 2) * Box(size, size, body_h)
-    sw += Pos(0, 0, body_h + (total - body_h) / 2) * Cylinder(stem_r, total - body_h)
-    return sw, total
+    """Omron B3F tact switch, legs trimmed (SOURCE: Omron B3F datasheet).
+
+    12: B3F-4055, 12 x 12 mm body 4.3 mm tall, 3.8 mm square plunger to 7.3 mm,
+        two 1.8 mm positioning bosses underneath (their length is not given: EST 1 mm).
+    6:  B3F-1020, 6 x 6 mm body 3.5 mm tall, 3.5 mm round plunger to 5.0 mm.
+    """
+    if size == 12:
+        sw = Pos(0, 0, 4.3 / 2) * Box(12, 12, 4.3)
+        sw += Pos(0, 0, 4.3 + 1.5) * Box(3.8, 3.8, 3.0)
+        for y in (-4.5, 4.5):
+            sw += Pos(0, y, -1.0) * Cylinder(0.9, 1.0, align=BASE)
+        return sw, 7.3
+    sw = Pos(0, 0, 3.5 / 2) * Box(6, 6, 3.5)
+    sw += Pos(0, 0, 3.5) * Cylinder(1.75, 1.5, align=BASE)
+    return sw, 5.0
 
 
 # --- FPC antennas (the kit ships one Wi-Fi and one LoRa) ------------------------------
@@ -124,9 +130,9 @@ def keypad(top, panel, caps, groove=2.6, wall=0.8, depth=2.4, cap_t=2.0,
 
 
 def screw_m2(x, y, z_head, length=8.0):
-    """M2 pan-head self-tapping screw, head down at z_head, pointing up."""
-    s = Pos(x, y, z_head) * Cylinder(1.9, 1.3, align=BASE)
-    s += Pos(x, y, z_head + 1.3) * Cylinder(0.95, length, align=BASE)
+    """M2 x 8 pan-head thread-forming screw for plastic (McMaster 99461A916: head 3.5 x 1.4)."""
+    s = Pos(x, y, z_head) * Cylinder(1.75, 1.4, align=BASE)
+    s += Pos(x, y, z_head + 1.4) * Cylinder(0.95, length, align=BASE)
     return s
 
 

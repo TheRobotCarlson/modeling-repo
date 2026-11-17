@@ -14,7 +14,7 @@ import numpy as np
 
 from modelkit import save_series
 
-CAPACITY_MAH = 250.0      # EST: 502030-class cell
+CAPACITY_MAH = 350.0      # SOURCE: Adafruit 2750
 USABLE = 0.85             # stop at ~3.5 V to keep the cell healthy
 
 # --- asleep, in microamps ---------------------------------------------------------

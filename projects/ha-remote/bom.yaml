@@ -3,72 +3,74 @@
 currency: USD
 items:
   - ref: kit
-    description: XIAO ESP32S3 + Wio-SX1262 kit, with Wi-Fi and LoRa FPC antennas
+    description: Wio-SX1262 with XIAO ESP32S3 kit, with Wi-Fi and LoRa FPC antennas
     qty: 2
     manufacturer: Seeed Studio
     mpn: ""
     supplier: Seeed Studio
     url: https://www.seeedstudio.com/Wio-SX1262-with-XIAO-ESP32S3-p-5982.html
     unit_cost:
-    notes: One already on hand. A third makes the LoRa gateway.
+    notes: One already on hand. Buy a third to build the LoRa gateway. Seeed SKU not checked.
   - ref: cell
-    description: LiPo pouch cell, 502030 class (~5 x 20 x 30 mm, ~250 mAh), with protection board
+    description: LiPo cell, 3.7 V 350 mAh, 36 x 19.6 x 5.2 mm, protection circuit built in
     qty: 2
-    manufacturer: ""
-    mpn: ""
-    supplier: ""
-    url: ""
-    unit_cost:
-    notes: Up to 33 mm long including the protection board.
+    manufacturer: Adafruit
+    mpn: "2750"
+    supplier: Adafruit
+    url: https://www.adafruit.com/product/2750
+    unit_cost: 6.95
+    notes: Cut off the JST plug and solder the leads to the XIAO's battery pads.
   - ref: sw-12
-    description: Tactile switch, 12 x 12 mm, 7.3 mm tall, through-hole
+    description: Tactile switch, 12 x 12 mm, 7.3 mm projected plunger, 2.55 N, through-hole
     qty: 1
-    manufacturer: ""
-    mpn: ""
-    supplier: ""
-    url: ""
+    manufacturer: Omron
+    mpn: B3F-4055
+    supplier: DigiKey
+    url: https://www.digikey.com/en/products/detail/omron-electronics-inc-emc-div/B3F-4055/31799
     unit_cost:
-    notes: Puck
+    notes: Puck. B3F-4050 is the same switch at 1.27 N for a lighter press.
   - ref: sw-6
-    description: Tactile switch, 6 x 6 mm, 5.0 mm tall, through-hole
+    description: Tactile switch, 6 x 6 mm, 5.0 mm flat plunger, 0.98 N, through-hole
     qty: 5
-    manufacturer: ""
-    mpn: ""
-    supplier: ""
-    url: ""
+    manufacturer: Omron
+    mpn: B3F-1020
+    supplier: DigiKey
+    url: https://www.digikey.com/en/products/result?keywords=B3F-1020
     unit_cost:
     notes: Bar
   - ref: r-div
-    description: Resistor, 1 MOhm, 1/8 W or smaller
+    description: Resistor, 1 MOhm 5 % 1/4 W carbon film, axial
     qty: 4
-    manufacturer: ""
-    mpn: ""
-    supplier: ""
-    url: ""
+    manufacturer: Yageo
+    mpn: CFR-25JB-52-1M
+    supplier: DigiKey
+    url: https://www.digikey.com/en/products/detail/yageo/CFR-25JB-52-1M/99
     unit_cost:
     notes: Battery divider, two per remote
   - ref: c-div
-    description: Capacitor, 100 nF ceramic
+    description: Capacitor, 100 nF 50 V X7R ceramic, radial
     qty: 2
-    manufacturer: ""
-    mpn: ""
-    supplier: ""
-    url: ""
+    manufacturer: KEMET
+    mpn: C320C104K5R5TA
+    supplier: DigiKey
+    url: https://www.digikey.com/en/products/detail/kemet/C320C104K5R5TA/818040
     unit_cost:
     notes: Across the lower divider resistor
   - ref: screws
-    description: M2 pan-head self-tapping screw for plastic, 8 mm (puck 4, bar 2) and 7 mm (bar 2)
-    qty: 8
-    manufacturer: ""
-    mpn: ""
-    supplier: ""
-    url: ""
-    unit_cost:
-  - ref: wire
-    description: Hook-up wire, 30 AWG silicone
+    description: M2 x 8 mm pan-head Phillips thread-forming screw for plastic, 18-8 stainless (pack of 25)
     qty: 1
-    manufacturer: ""
-    mpn: ""
-    supplier: ""
-    url: ""
+    manufacturer: McMaster-Carr
+    mpn: 99461A916
+    supplier: McMaster-Carr
+    url: https://www.mcmaster.com/99461A916/
     unit_cost:
+    notes: Four per remote
+  - ref: wire
+    description: Silicone-cover stranded wire, 30 AWG, 50 ft, black
+    qty: 1
+    manufacturer: Adafruit
+    mpn: "3164"
+    supplier: Adafruit
+    url: https://www.adafruit.com/product/3164
+    unit_cost: 4.95
+    notes: Other colours are 3165 to 3169

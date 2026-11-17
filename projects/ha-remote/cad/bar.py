@@ -29,7 +29,7 @@ BOSSES = [(-16.8, 16.0), (16.8, 16.0), (-14.5, -48.0), (14.5, -48.0)]
 BOSS_R = 2.5
 
 KIT_Y = -(IN_L / 2) + 0.7 + KIT_L / 2 + USB_OUT     # USB face 0.7 mm inside the end wall
-BATT_Y = -17.3
+BATT_Y = -15.4
 TONGUE_W = 14.0
 
 
@@ -100,8 +100,8 @@ def build():
     screws = None
     for x, y in BOSSES:
         base -= Pos(x, y, -0.01) * Cylinder_(1.2, BASE_T + 0.1)
-        base -= Pos(x, y, -0.01) * Cylinder_(2.1, 1.5)
-        s = screw_m2(x, y, 0.1, 8.0 if y < 0 else 7.0)
+        base -= Pos(x, y, -0.01) * Cylinder_(2.1, 1.7)
+        s = screw_m2(x, y, 0.1)
         screws = s if screws is None else screws + s
     p["base"], p["grip"], p["screws"] = base, grip, screws
     return p
@@ -128,10 +128,10 @@ def export(p):
             description="Charging, in the bottom end.", **ref)
     asm.add("wio", p["wio"], "Wio-SX1262 board", material="FR4", color="#1f4e8c", explode=(0, 0, 12),
             description="The LoRa radio, under the XIAO.", **ref)
-    asm.add("battery", p["battery"], "LiPo cell, 502030 class", color="#c9ccd1", mass_g=5.5, explode=(0, 0, 9),
-            description="About 250 mAh. Generic size until a cell is chosen.", source="bought",
-            notes=["EST: size and mass"])
-    asm.add("switches", p["switches"], "6 mm tact switches (5)", color="#30343a", mass_g=2.5, explode=(0, 0, 16),
+    asm.add("battery", p["battery"], "LiPo cell, 350 mAh", color="#c9ccd1", mass_g=8.2, explode=(0, 0, 9),
+            description="Adafruit 2750: 36 x 19.6 x 5.2 mm, protection circuit built in.", source="bought",
+            mpn="2750")
+    asm.add("switches", p["switches"], "6 mm tact switches (5)", color="#30343a", mass_g=1.25, mpn="B3F-1020", explode=(0, 0, 16),
             description="6 x 6 x 5 mm, one under each cap.", source="bought")
     asm.add("fpc-wifi", p["fpc-wifi"], "Wi-Fi antenna (FPC)", color="#c79a3b", mass_g=0.3, explode=(10, 0, 6),
             description="On the right wall beside the battery.", source="bought", notes=["EST: size"])
@@ -149,8 +149,8 @@ def export(p):
             description="Floor with five switch pedestals and cradles; tongue at the top end.", notes=[PRINT_BASE])
     asm.add("grip", p["grip"], "Feet and grips", material="TPU", color="#3a3f47",
             description="Four TPU feet, and two strips that pinch the kit.", notes=[PRINT_BASE])
-    asm.add("screws", p["screws"], "M2 self-tapping screws (4)", material="Steel", color="#7d838c",
-            explode=(0, 0, -12), description="Two 8 mm at the bottom end, two 7 mm by the keys.", source="bought")
+    asm.add("screws", p["screws"], "M2 x 8 thread-forming screws (4)", material="Steel", color="#7d838c",
+            explode=(0, 0, -12), description="Two at the bottom end, two beside the keys.", source="bought")
     asm.export()
 
 

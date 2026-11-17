@@ -51,6 +51,6 @@ buttons. D6 and D7 (GPIO43 and 44) are free but cannot wake the chip.
 ## The radio must be put to sleep
 
 **The SX1262 powers up in standby, drawing about 0.6 mA: forty times the ESP32's
-own deep sleep.** Left alone, it flattens the battery in under two weeks, even in
+own deep sleep.** Left alone, it flattens the battery in under three weeks, even in
 the Wi-Fi version that never uses the radio. Both firmware configs send it to cold
 sleep as the last thing before every deep sleep. See [battery life](../power/).

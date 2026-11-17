@@ -13,7 +13,36 @@ parts. The radio kit is used as it comes.
 | Main button | D1 (GPIO2) and GND | The puck's only button |
 | Key 1 – 4 (bar) | D2 – D5 (GPIO3 – GPIO6) and GND | One GND wire can daisy-chain all switches |
 | 1 MΩ | `BAT+` to D0 (GPIO1) | Top of the divider |
-| 1 MΩ + 100 nF | D0 (GPIO1) to GND | Bottom of the divider; the capacitor steadies the reading |
+| 1 MΩ + 100 nF | D0 (GPIO1) to GND | Bottom of the divider; the capacitor steadies the reading. Any ground will do: the models use the nearest switch's ground leg |
+
+<ModelViewer assembly="bar" height={520} show={["Wiring"]} />
+
+**The models carry every wire, as one way to run them.** Red is battery +, black
+is ground, white is the battery-sense line to D0, yellow are the button lines.
+While the wiring shows, the printed parts turn see-through. Taking the model apart
+hides the wiring, because the parts it joins move away from each other. On the
+puck and bar pages the wiring starts hidden; **Show wiring** under the model turns
+it on.
+
+<details>
+<summary>How the wires are run</summary>
+
+- **Battery leads** go from the cell's end into the 2 mm gap between the two
+  boards and up to the battery pads underneath the XIAO. In the bar that is a
+  straight run; in the puck the leads climb over the cell and come round in front
+  of the switch. The stops between cell and kit are split so the leads pass
+  between them.
+- **Button wires** leave the XIAO's edge pads, climb over the USB-C port and run
+  as a flat ribbon at 10.9 mm, clear of the battery leads below. Each drops to
+  its switch's side. In the bar, ground runs up the same ribbon and branches to
+  every switch.
+- **The divider** lies on the floor beside the battery (bar) or left of the
+  switch (puck). Its bottom end goes to the nearest switch's ground leg.
+- 30 AWG silicone wire is taken as 0.7 mm across. The models are tested so that
+  no wire touches another part except at its ends. The routes are a plan; the battery pad
+  position is estimated (see the callout).
+
+</details>
 
 <Callout title="Check before soldering: where the battery pads are with the radio board fitted.">
   On the plain XIAO the battery pads are on the underside, and in this kit the

@@ -129,6 +129,57 @@ def keypad(top, panel, caps, groove=2.6, wall=0.8, depth=2.4, cap_t=2.0,
     return tpu, cap_solids, plate_cut
 
 
+# --- Wiring ---------------------------------------------------------------------------
+# Pads in the kit's local frame (USB to +X). The XIAO's edge pins are on a 2.54 mm
+# pitch (SOURCE: Seeed pinout), 0.9 mm in from each long edge (EST): D0 - D6 down the +Y
+# edge starting at the USB end, 5V, GND, 3V3, D10 - D7 down the -Y edge.
+# The battery pads are under the XIAO, in the gap above the Wio board: EST position.
+PAD_Y = KIT_W / 2 - 0.9
+PADS = {f"D{i}": (7.62 - 2.54 * i, PAD_Y, Z_XIAO_TOP) for i in range(7)}
+PADS["GND"] = (5.08, -PAD_Y, Z_XIAO_TOP)
+PADS["BAT+"] = (4.0, 4.0, WIO_UNDER + PCB + B2B)     # on the XIAO's underside
+PADS["BAT-"] = (6.5, 2.3, WIO_UNDER + PCB + B2B)     # nearer the USB port (Seeed wiki)
+
+WIRE_D = 0.7                       # 30 AWG silicone, outside diameter (EST)
+GAP_Z = WIO_UNDER + PCB + B2B - WIRE_D / 2 - 0.05     # wire centre in the board-to-board gap
+
+
+def pad(loc, name):
+    """World position of a kit pad, given the kit's placement."""
+    return tuple((loc * Pos(*PADS[name])).position)
+
+
+def wire(*paths, d=WIRE_D):
+    """Wire runs through each list of points: straight segments, round at the bends.
+
+    Ends are left flat so a wire can stop exactly on a pad or a component face.
+    """
+    from build123d import Plane, Solid, Vector
+    out = None
+    for pts in paths:
+        pts = [Vector(*p) for p in pts]
+        for a, b in zip(pts, pts[1:]):
+            seg = Solid.make_cylinder(d / 2, (b - a).length, Plane(origin=a, z_dir=b - a))
+            out = seg if out is None else out + seg
+        for p in pts[1:-1]:
+            out += Pos(p) * Sphere(d / 2)
+    return out
+
+
+RES_L, RES_D = 6.0, 2.3            # EST: 1/4 W carbon-film body (Yageo CFR-25)
+CAP_BODY = (2.5, 5.5, 5.0)         # EST: KEMET C320 radial, legs 5.08 mm apart along Y
+
+
+def resistor_y(x, y0, y1, z):
+    """Resistor body lying along Y between y0 and y1 (y1 - y0 = RES_L)."""
+    return Pos(x, (y0 + y1) / 2, z) * Rot(90, 0, 0) * Cylinder(RES_D / 2, abs(y1 - y0))
+
+
+def capacitor(x, y, z0):
+    """Radial capacitor standing on its legs, body bottom at z0."""
+    return Pos(x, y, z0) * Box(*CAP_BODY, align=BASE)
+
+
 def screw_m2(x, y, z_head, length=8.0):
     """M2 x 8 pan-head thread-forming screw for plastic (McMaster 99461A916: head 3.5 x 1.4)."""
     s = Pos(x, y, z_head) * Cylinder(1.75, 1.4, align=BASE)
@@ -137,4 +188,4 @@ def screw_m2(x, y, z_head, length=8.0):
 
 
 __all__ = ["kit", "battery", "tact", "fpc_arc", "fpc_flat", "keypad", "slab", "screw_m2",
-           "Circle", "Rot"]
+           "wire", "pad", "resistor_y", "capacitor", "Circle", "Rot"]

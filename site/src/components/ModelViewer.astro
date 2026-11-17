@@ -1,11 +1,14 @@
 ---
 import { dataUrl, grams, projectOf, readData, type Manifest } from '../lib/site';
-const { assembly, project, height = 440, spin = true } = Astro.props as {
+const { assembly, project, height = 440, spin = true, show = [] } = Astro.props as {
   assembly: string; project?: string; height?: number; spin?: boolean;
+  show?: string[]; // optional layers to start visible
 };
 const slug = projectOf(Astro, project);
 const m = readData<Manifest>(slug, 'cad', assembly, 'manifest.json');
 const explodes = m.parts.some((p) => p.explode_mm.some((v) => v !== 0));
+const layers = [...new Set(m.parts.map((p) => p.layer).filter(Boolean))] as string[];
+
 ---
 <figure class="viewer" data-viewer data-base={dataUrl(slug, 'cad', assembly) + '/'} data-spin={String(spin)}>
   <div class="viewer-stage" style={`height:${height}px`}>
@@ -27,6 +30,10 @@ const explodes = m.parts.some((p) => p.explode_mm.some((v) => v !== 0));
         <input type="range" min="0" max="1" step="0.01" value="0" data-act="explode" />
       </label>
     )}
+    {layers.map((l) => {
+      const on = show.includes(l);
+      return <button data-act="layer" data-layer={l} aria-pressed={on ? 'true' : 'false'}>{on ? 'Hide' : 'Show'} {l.toLowerCase()}</button>;
+    })}
     <span class="viewer-meta">{m.parts.length} parts · {grams(m.mass_g)} · {m.size_mm.map((v) => v.toFixed(0)).join(' × ')} mm</span>
   </div>
   <figcaption>{m.title}. Drag to turn, scroll to zoom, click a part for its mass and job.</figcaption>

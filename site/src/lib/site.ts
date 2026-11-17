@@ -59,6 +59,7 @@ export interface PartInfo {
   id: string; name: string; source: string; material: string | null; mpn: string; color: string;
   mass_g: number | null; mass_from: string; size_mm: number[]; explode_mm: number[];
   description: string; notes: string[]; files: Record<'glb' | 'stl' | 'step', string>;
+  layer?: string;
 }
 export interface Manifest {
   project: string; name: string; title: string; description: string;

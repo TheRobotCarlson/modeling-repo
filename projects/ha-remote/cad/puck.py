@@ -13,8 +13,9 @@ import math
 
 from build123d import Axis, Box, Circle, Cylinder, Pos, Rot
 
-from _parts import (BATT_L, CELL_W, KIT_L, KIT_W, LORA_FPC, USB_OUT, WIFI_FPC, Z_USB, BASE,
-                    battery, fpc_arc, keypad, kit, screw_m2, slab, tact)
+from _parts import (BATT_L, CAP_BODY, CELL_W, GAP_Z, KIT_L, KIT_W, LORA_FPC, RES_D, RES_L, USB_OUT,
+                    WIFI_FPC, Z_USB, BASE, battery, capacitor, fpc_arc, keypad, kit, pad, resistor_y,
+                    screw_m2, slab, tact, wire)
 from modelkit import Assembly
 
 R_OUT, WALL, TOP_T, BASE_T = 36.0, 2.0, 2.0, 2.0
@@ -33,7 +34,8 @@ BATT_Y = -18.5
 def build():
     p = {}
     # --- bought parts --------------------------------------------------------------
-    wio, xiao, usb = (Pos(0, KIT_Y, BASE_T) * Rot(0, 0, 90) * s for s in kit())
+    kloc = Pos(0, KIT_Y, BASE_T) * Rot(0, 0, 90)
+    wio, xiao, usb = (kloc * s for s in kit())
     p["wio"], p["xiao"], p["usb"] = wio, xiao, usb
     p["battery"] = Pos(0, BATT_Y, BASE_T) * battery()
     sw, sw_h = tact(12)
@@ -75,7 +77,8 @@ def build():
         base += Pos(sx * (BATT_L / 2 + 1.0), BATT_Y + 4.5, BASE_T) * Box(1.2, 6, 3, align=BASE)   # battery end stops
         base += Pos(sx * (KIT_W / 2 + 1.0), KIT_Y - 1.5, BASE_T) * Box(1.2, 14, 3, align=BASE)  # kit cradle
     base += Pos(0, BATT_Y + CELL_W / 2 + 1.2, BASE_T) * Box(24, 1.0, 3, align=BASE)     # battery inner wall
-    base += Pos(0, KIT_Y - KIT_L / 2 - 0.9, BASE_T) * Box(12, 1.0, 4, align=BASE)       # kit back stop
+    for sx in (-1, 1):                                  # kit back stops, apart so the battery wires pass
+        base += Pos(sx * 6.5, KIT_Y - KIT_L / 2 - 0.9, BASE_T) * Box(3, 1.0, 4, align=BASE)
     grip = None
     for sx in (-1, 1):
         g = Pos(sx * (KIT_W / 2 + 0.18), KIT_Y - 1.5, BASE_T + 0.5) * Box(0.4, 10, 2.5, align=BASE)
@@ -91,7 +94,52 @@ def build():
         screws.append(screw_m2(x, y, 0.1))
     p["base"], p["grip"] = base, grip
     p["screws"] = screws[0] + screws[1] + screws[2] + screws[3]
+    p.update(wiring(kloc, sw_z))
     return p
+
+
+def wiring(kloc, sw_z):
+    """Wires, as they could be run. Paths are a plan, not a measurement.
+
+    Battery leads leave the cell's right end, climb over it and run up the right
+    side, then cross in front of the switch and slide into the gap between the two
+    boards to the battery pads. The divider lies on the floor left of the switch.
+    The two switch wires run over the kit, above the battery leads.
+    """
+    under = GAP_Z + BASE_T + 0.4               # XIAO underside: the battery pads
+    gap = GAP_Z + BASE_T                       # wire centre between the boards
+    zb, zl, zs = 8.0, 10.9, sw_z + 2.5         # over the battery, over the USB-C port, at the switch
+    zr = BASE_T + RES_D / 2 + 0.05             # resistor axis, just off the floor
+    bp, bn, d0, d1, g = (pad(kloc, n) for n in ("BAT+", "BAT-", "D0", "D1", "GND"))
+    end, ly = BATT_L / 2, BATT_Y                # cell's lead end
+    sx = 6.0                                    # switch half width
+    rx, r1, r2 = -13.5, 16.5, 8.5               # divider column; R1 and R2 lower ends
+    j = r1 - 1.0                                # divider middle
+    cx, cy = -17.0, 11.5                        # capacitor beside R2
+    leg = CAP_BODY[1] / 2 - 0.21                # legs 5.08 apart
+    cz = zr + 0.4
+
+    red = wire(
+        [(end, ly - 3.5, 4.6), (end + 0.6, ly - 3.5, 4.6), (end + 0.6, ly - 3.5, zb), (12, ly - 3.5, zb),
+         (12, 8, zb), (bp[0], 8, zb), (bp[0], 8, gap), (bp[0], bp[1], gap), (bp[0], bp[1], under)],
+        [(bp[0], bp[1], gap), (rx, bp[1], gap), (rx, r1 + RES_L + 1, gap), (rx, r1 + RES_L + 1, zr),
+         (rx, r1 + RES_L, zr)])
+    black = wire(
+        [(end, ly - 1.5, 4.6), (end + 0.6, ly - 1.5, 4.6), (end + 0.6, ly - 1.5, zb), (13, ly - 1.5, zb),
+         (13, 9, zb), (bn[0], 9, zb), (bn[0], 9, gap), (bn[0], bn[1], gap), (bn[0], bn[1], under)],
+        [g, (g[0], g[1], zl), (2.5, g[1], zl), (2.5, sx + 0.6, zl), (2.5, sx + 0.6, zs), (2.5, sx, zs)],
+        [(rx, r2, zr), (rx, r2 - 1, zr), (rx, 2.5, zr), (rx, 2.5, zs), (-sx, 2.5, zs)],
+        [(cx, cy - leg, cz), (cx, cy - leg, zr), (cx, r2 - 1, zr), (rx, r2 - 1, zr)])
+    sense = wire(
+        [(rx, r1, zr), (rx, r2 + RES_L, zr)],
+        [(cx, cy + leg, cz), (cx, cy + leg, zr), (cx, j, zr), (rx, j, zr)],
+        [(rx, j, zr), (-11.6, j, zr), (-11.6, j, 7.55), (-11.6, d0[1], 7.55), (d0[0], d0[1], 7.55), d0])
+    signal = wire([d1, (d1[0], d1[1], zl), (-2.5, d1[1], zl), (-2.5, sx + 0.6, zl), (-2.5, sx + 0.6, zs),
+                   (-2.5, sx, zs)])
+    divider = (resistor_y(rx, r1, r1 + RES_L, zr) + resistor_y(rx, r2, r2 + RES_L, zr)
+               + capacitor(cx, cy, cz))
+    return {"wire-red": red, "wire-black": black, "wire-sense": sense, "wire-signal": signal,
+            "divider": divider}
 
 
 PRINT_TOP = "Shell, ring and cap: one print, top face down"
@@ -130,7 +178,26 @@ def export(p):
             description="TPU foot ring underneath, and two strips that pinch the kit.", notes=[PRINT_BASE])
     asm.add("screws", p["screws"], "M2 x 8 thread-forming screws (4)", material="Steel", color="#7d838c",
             explode=(0, 0, -12), description="Into the shell's bosses.", source="bought")
+    wiring_parts(asm, p, "the switch")
     asm.export()
+
+
+WIRING = "Wiring"
+
+
+def wiring_parts(asm, p, button):
+    w = dict(source="bought", layer=WIRING, notes=["Route is a plan, not measured", "EST: battery pad position"])
+    asm.add("wire-red", p["wire-red"], "Battery + wires", color="#c8382f", mass_g=0.2,
+            description="Cell + to the XIAO's BAT+ pad, and BAT+ to the top of the divider.", **w)
+    asm.add("wire-black", p["wire-black"], "Ground wires", color="#2a2c30", mass_g=0.3,
+            description=f"Cell - to BAT-, GND to {button}, and the divider's bottom to the nearest switch ground.", **w)
+    asm.add("wire-sense", p["wire-sense"], "Battery sense (D0)", color="#e8e6df", mass_g=0.1,
+            description="The divider's middle to D0, with the capacitor's other leg.", **w)
+    asm.add("wire-signal", p["wire-signal"], "Button wires", color="#e3b232", mass_g=0.2,
+            description=f"D1 - D5 to {button}." if button != "the switch" else "D1 to the switch.", **w)
+    asm.add("divider", p["divider"], "Battery divider: 2 x 1 MOhm + 100 nF", color="#c9a66b", mass_g=0.6,
+            description="Two resistors in series from BAT+ to ground, the capacitor across the lower one.",
+            **{**w, "notes": ["EST: body sizes"]})
 
 
 if __name__ == "__main__":

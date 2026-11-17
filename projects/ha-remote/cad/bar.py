@@ -11,9 +11,11 @@ along the side walls beside the battery.
 
 from build123d import Axis, Box, Circle, Pos, RectangleRounded, Rot, extrude, offset
 
-from _parts import (BASE, BATT_L, CELL_W, KIT_L, KIT_W, LORA_FPC, USB_OUT, WIFI_FPC, Z_USB,
-                    battery, fpc_flat, keypad, kit, screw_m2, slab, tact)
+from _parts import (BASE, BATT_L, CAP_BODY, CELL_W, GAP_Z, KIT_L, KIT_W, LORA_FPC, RES_D, RES_L,
+                    USB_OUT, WIFI_FPC, Z_USB, battery, capacitor, fpc_flat, keypad, kit, pad,
+                    resistor_y, screw_m2, slab, tact, wire)
 from modelkit import Assembly
+from puck import wiring_parts
 
 W, L, CORNER = 44.0, 120.0, 14.0
 WALL, TOP_T, BASE_T = 2.0, 2.0, 2.0
@@ -40,9 +42,10 @@ def plan(w, l, r):
 def build():
     p = {}
     # --- bought parts --------------------------------------------------------------
-    wio, xiao, usb = (Pos(0, KIT_Y, BASE_T) * Rot(0, 0, -90) * s for s in kit())
+    kloc = Pos(0, KIT_Y, BASE_T) * Rot(0, 0, -90)
+    wio, xiao, usb = (kloc * s for s in kit())
     p["wio"], p["xiao"], p["usb"] = wio, xiao, usb
-    p["battery"] = Pos(0, BATT_Y, BASE_T) * Rot(0, 0, 90) * battery()
+    p["battery"] = Pos(0, BATT_Y, BASE_T) * Rot(0, 0, -90) * battery()     # leads toward the kit
     sw, sw_h = tact(6)
     sw_z = STEM_Z - SW_GAP - sw_h
     switches = [Pos(x, y, sw_z) * sw for x, y in [MAIN, *KEYS]]
@@ -88,7 +91,8 @@ def build():
         base += Pos(sx * (CELL_W / 2 + 1.0), BATT_Y, BASE_T) * Box(1.2, 20, 3, align=BASE)
         base += Pos(sx * (KIT_W / 2 + 1.0), KIT_Y + 1.5, BASE_T) * Box(1.2, 13, 3, align=BASE)
     stop_y = (BATT_Y - BATT_L / 2 + KIT_Y + KIT_L / 2) / 2
-    base += Pos(0, stop_y, BASE_T) * Box(12, 0.8, 4, align=BASE)       # between battery and kit
+    for sx in (-1, 1):                     # between battery and kit, apart so the battery wires pass
+        base += Pos(sx * 7.0, stop_y, BASE_T) * Box(4, 0.8, 4, align=BASE)
     grip = None
     for sx in (-1, 1):
         g = Pos(sx * (KIT_W / 2 + 0.18), KIT_Y + 1.5, BASE_T + 0.5) * Box(0.4, 9, 2.5, align=BASE)
@@ -104,7 +108,65 @@ def build():
         s = screw_m2(x, y, 0.1)
         screws = s if screws is None else screws + s
     p["base"], p["grip"], p["screws"] = base, grip, screws
+    p.update(wiring(kloc, sw_z))
     return p
+
+
+def wiring(kloc, sw_z):
+    """Wires, as they could be run. Paths are a plan, not a measurement.
+
+    The battery leads go straight from the cell's end into the gap between the
+    boards. Six wires (ground and D1 - D5) leave the XIAO's edge pads, climb over
+    the USB-C port and run up the middle in a flat ribbon, over the battery, to the
+    keys, dropping to each switch. The divider lies on the floor right of the
+    battery and grounds to key 4.
+    """
+    under = GAP_Z + BASE_T + 0.4
+    gap = GAP_Z + BASE_T
+    zl, zs = 10.9, sw_z + 1.3                   # ribbon height; where wires meet a switch's side
+    zr = BASE_T + RES_D / 2 + 0.05
+    bp, bn, g = pad(kloc, "BAT+"), pad(kloc, "BAT-"), pad(kloc, "GND")
+    ds = [pad(kloc, f"D{i}") for i in range(6)]
+    cell = BATT_Y - BATT_L / 2
+    face = 3.0                                  # switch half width
+    rx, r1, r2 = 14.0, -44.0, -36.0             # divider column; R1 and R2 lower ends
+    j = r1 + RES_L + 1.0
+    cx, cy = 17.5, r2 + RES_L / 2
+    leg = CAP_BODY[1] / 2 - 0.21
+    cz = zr + 0.4
+    lane = dict(zip(["G", "D1", "D2", "D3", "D4", "D5"], [-3.15, -2.25, -1.35, -0.45, 0.45, 1.35]))
+
+    def rise(pt, x):
+        return [pt, (pt[0], pt[1], zl), (x, pt[1], zl)]
+
+    red = wire(
+        [(bp[0], cell, gap), (bp[0], bp[1], gap), (bp[0], bp[1], under)],
+        [(bp[0], bp[1], gap), (11.0, bp[1], gap), (11.0, r1 - 0.6, gap), (rx, r1 - 0.6, gap),
+         (rx, r1 - 0.6, zr), (rx, r1, zr)])
+    sense = wire(
+        [(rx, r1 + RES_L, zr), (rx, r2, zr)],
+        [(cx, cy - leg, cz), (cx, cy - leg, zr), (cx, j, zr), (rx, j, zr)],
+        [ds[0], (ds[0][0], ds[0][1], 7.55), (11.0, ds[0][1], 7.55), (11.0, j, 7.55), (rx, j, 7.55), (rx, j, zr)])
+    k3, k4, k1, k2 = 8.0, 8.0, 25.0, 25.0       # key rows
+    black = wire(
+        [(bn[0], cell, gap), (bn[0], bn[1], gap), (bn[0], bn[1], under)],
+        [(rx, r2 + RES_L, zr), (rx, r2 + RES_L + 1, zr), (rx, r2 + RES_L + 1, zs), (rx, k4, zs),
+         (8.0 + face, k4, zs)],
+        [(cx, cy + leg, cz), (cx, cy + leg, zr), (cx, r2 + RES_L + 1, zr), (rx, r2 + RES_L + 1, zr)],
+        rise(g, lane["G"]) + [(lane["G"], 36.0, zl), (lane["G"], 36.0, zs), (-1.5, 36.0, zs),
+                              (-1.5, 44.0 - face, zs)],
+        *[[(lane["G"], y - 1.5, zl), (lane["G"], y - 1.5, zs), (-8.0 + face, y - 1.5, zs)] for y in (k3, k1)],
+        *[[(lane["G"], y - 1.5, zs), (8.0 - face, y - 1.5, zs)] for y in (k4, k2)])
+    signal = wire(
+        rise(ds[1], lane["D1"]) + [(lane["D1"], 38.5, zl), (1.0, 38.5, zl), (1.0, 38.5, zs), (1.0, 44.0 - face, zs)],
+        rise(ds[2], lane["D2"]) + [(lane["D2"], k1 + 1.5, zl), (lane["D2"], k1 + 1.5, zs), (-8.0 + face, k1 + 1.5, zs)],
+        rise(ds[3], lane["D3"]) + [(lane["D3"], k2 + 1.5, zl), (lane["D3"], k2 + 1.5, zs), (8.0 - face, k2 + 1.5, zs)],
+        rise(ds[4], lane["D4"]) + [(lane["D4"], k3 + 1.5, zl), (lane["D4"], k3 + 1.5, zs), (-8.0 + face, k3 + 1.5, zs)],
+        rise(ds[5], lane["D5"]) + [(lane["D5"], k4 + 1.5, zl), (lane["D5"], k4 + 1.5, zs), (8.0 - face, k4 + 1.5, zs)])
+    divider = (resistor_y(rx, r1, r1 + RES_L, zr) + resistor_y(rx, r2, r2 + RES_L, zr)
+               + capacitor(cx, cy, cz))
+    return {"wire-red": red, "wire-black": black, "wire-sense": sense, "wire-signal": signal,
+            "divider": divider}
 
 
 def Cylinder_(r, h):
@@ -151,6 +213,7 @@ def export(p):
             description="Four TPU feet, and two strips that pinch the kit.", notes=[PRINT_BASE])
     asm.add("screws", p["screws"], "M2 x 8 thread-forming screws (4)", material="Steel", color="#7d838c",
             explode=(0, 0, -12), description="Two at the bottom end, two beside the keys.", source="bought")
+    wiring_parts(asm, p, "each switch")
     asm.export()
 
 

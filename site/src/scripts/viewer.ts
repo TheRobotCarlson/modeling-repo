@@ -7,7 +7,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 interface Part {
   id: string; name: string; color: string; source: string; material: string | null;
   mass_g: number | null; mpn: string; description: string; explode_mm: number[];
-  files: { glb: string };
+  files: { glb: string }; layer?: string;
 }
 
 const loader = new GLTFLoader();
@@ -92,6 +92,31 @@ async function mount(el: HTMLElement) {
     controls.target.lerpVectors(closed.center, open.center, t);
     camera.position.copy(controls.target).add(dir);
     for (const g of groups) g.group.position.copy(g.offset).multiplyScalar(t);
+    applyLayers();
+    dirty = true;
+  }
+
+  // Optional layers (e.g. wiring) sit inside the model. While one is on and the
+  // model is closed, printed parts turn see-through so the layer can be read in
+  // place. Taken apart, the layer hides: its parts join pieces that move apart.
+  const shown = new Set(
+    [...el.querySelectorAll<HTMLButtonElement>('[data-act=layer][aria-pressed=true]')].map((b) => b.dataset.layer!),
+  );
+  function applyLayers() {
+    const ghost = shown.size > 0 && explode === 0;
+    for (const g of groups) {
+      if (g.part.layer) g.group.visible = shown.has(g.part.layer) && explode === 0;
+      else if (g.part.source === 'printed') {
+        g.group.traverse((o) => {
+          const mat = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+          if (!(o as THREE.Mesh).isMesh || !mat) return;
+          mat.transparent = ghost;
+          mat.opacity = ghost ? 0.18 : 1;
+          mat.depthWrite = !ghost;
+          mat.needsUpdate = true;
+        });
+      }
+    }
     dirty = true;
   }
   function reset() {
@@ -122,7 +147,7 @@ async function mount(el: HTMLElement) {
   const pick = (ev: PointerEvent) => {
     const r = canvas.getBoundingClientRect();
     ray.setFromCamera(new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1), camera);
-    return ray.intersectObjects(groups.map((g) => g.group), true)[0]?.object as THREE.Mesh | undefined;
+    return ray.intersectObjects(groups.filter((g) => g.group.visible).map((g) => g.group), true)[0]?.object as THREE.Mesh | undefined;
   };
   const highlight = (mesh: THREE.Mesh | null) => {
     if (lit === mesh) return;
@@ -170,6 +195,18 @@ async function mount(el: HTMLElement) {
   el.querySelector<HTMLInputElement>('[data-act=explode]')?.addEventListener('input', (ev) =>
     setExplode(Number((ev.target as HTMLInputElement).value)),
   );
+
+  el.querySelectorAll<HTMLButtonElement>('[data-act=layer]').forEach((btn) => {
+    const name = btn.dataset.layer!;
+    btn.addEventListener('click', () => {
+      const on = !shown.has(name);
+      if (on) shown.add(name);
+      else shown.delete(name);
+      btn.setAttribute('aria-pressed', String(on));
+      btn.textContent = `${on ? 'Hide' : 'Show'} ${name.toLowerCase()}`;
+      applyLayers();
+    });
+  });
 
   renderer.setAnimationLoop(() => {
     if (!visible) return;

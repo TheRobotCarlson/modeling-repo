@@ -37,3 +37,22 @@ def test_stems_rest_just_above_switches(name, caps):
     for c in caps:
         gap = p[c].bounding_box().min.Z - top
         assert gap == pytest.approx(m.SW_GAP, abs=1e-6), c
+
+
+# Each wire must touch what it connects: a gap here means a wire stops short.
+ENDS = {
+    "wire-red": ["battery", "xiao", "divider"],
+    "wire-black": ["battery", "xiao", "divider"],
+    "wire-sense": ["xiao", "divider"],
+    "wire-signal": ["xiao"],
+}
+
+
+@pytest.mark.parametrize("name, switch", [("puck", "switch"), ("bar", "switches")])
+def test_wires_reach_their_parts(name, switch):
+    p = importlib.import_module(name).build()
+    ends = {**ENDS, "wire-signal": ["xiao", switch]}
+    ends["wire-black"] = ends["wire-black"] + [switch]
+    for w, targets in ends.items():
+        for t in targets:
+            assert p[w].distance_to(p[t]) < 0.01, (w, t)

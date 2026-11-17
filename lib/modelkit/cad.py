@@ -63,6 +63,7 @@ class Part:
     mpn: str = ""
     mass_g: float | None = None  # override for bought parts with a datasheet mass
     notes: list[str] = field(default_factory=list)
+    layer: str = ""  # optional overlay (e.g. "Wiring"): hidden in the viewer until toggled on
 
     def mass(self) -> tuple[float | None, str]:
         """(grams, where the number came from)."""
@@ -123,6 +124,7 @@ class Assembly:
                     "explode_mm": list(p.explode),
                     "description": p.description,
                     "notes": p.notes,
+                    "layer": p.layer,
                     "files": {k: f"{p.id}.{k}" for k in ("glb", "stl", "step")},
                 }
             )

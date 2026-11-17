@@ -1,0 +1,74 @@
+# Bill of materials for one puck and one bar. Leave mpn/unit_cost empty until a
+# real part is chosen; the site flags those rows as "to select".
+currency: USD
+items:
+  - ref: kit
+    description: XIAO ESP32S3 + Wio-SX1262 kit, with Wi-Fi and LoRa FPC antennas
+    qty: 2
+    manufacturer: Seeed Studio
+    mpn: ""
+    supplier: Seeed Studio
+    url: https://www.seeedstudio.com/Wio-SX1262-with-XIAO-ESP32S3-p-5982.html
+    unit_cost:
+    notes: One already on hand. A third makes the LoRa gateway.
+  - ref: cell
+    description: LiPo pouch cell, 502030 class (~5 x 20 x 30 mm, ~250 mAh), with protection board
+    qty: 2
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Up to 33 mm long including the protection board.
+  - ref: sw-12
+    description: Tactile switch, 12 x 12 mm, 7.3 mm tall, through-hole
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Puck
+  - ref: sw-6
+    description: Tactile switch, 6 x 6 mm, 5.0 mm tall, through-hole
+    qty: 5
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Bar
+  - ref: r-div
+    description: Resistor, 1 MOhm, 1/8 W or smaller
+    qty: 4
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Battery divider, two per remote
+  - ref: c-div
+    description: Capacitor, 100 nF ceramic
+    qty: 2
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Across the lower divider resistor
+  - ref: screws
+    description: M2 pan-head self-tapping screw for plastic, 8 mm (puck 4, bar 2) and 7 mm (bar 2)
+    qty: 8
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+  - ref: wire
+    description: Hook-up wire, 30 AWG silicone
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:

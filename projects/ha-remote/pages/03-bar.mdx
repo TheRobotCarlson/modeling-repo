@@ -1,0 +1,54 @@
+---
+title: The bar
+summary: A main button and four keys, 44 × 120 mm.
+---
+
+**A slim bar with one round main button and a 2 × 2 block of keys.** The same
+construction as the puck: a single TPU panel carries all five caps, each in its own
+spring channel, and five 6 mm tact switches sit on pedestals underneath.
+
+<ModelViewer assembly="bar" height={560} />
+
+## Layout
+
+**Buttons at the top, battery in the middle, the kit and USB-C at the bottom.**
+That keeps the heavy part in the hand and the charging cable out of the way. The
+antennas lie along the side walls beside the battery, where nothing else fits.
+
+| Cap | Size | Pin | Event `button` |
+|---|---|---|---|
+| Main (orange) | 17 mm round | D1 / GPIO2 | 1 |
+| Key 1, top left | 11 mm square | D2 / GPIO3 | 2 |
+| Key 2, top right | 11 mm square | D3 / GPIO4 | 3 |
+| Key 3, bottom left | 11 mm square | D4 / GPIO5 | 4 |
+| Key 4, bottom right | 11 mm square | D5 / GPIO6 | 5 |
+
+Caps are separate colours in the same print. Swap the colours to suit what the
+buttons do.
+
+## Holding the base on
+
+**Screws alone would let the far end of the base bend away when the top buttons are
+pressed.** So the base has a tongue at the top end that hooks into a slot in the
+shell's end wall. Hook the tongue in, swing the base shut, and fit four screws: two
+at the bottom end and two beside the keys.
+
+<details>
+<summary>The detail</summary>
+
+- Panel: 33 × 57.5 mm. Channels are narrower than the puck's (2.2 mm, 0.7 mm walls,
+  2.2 mm deep) to fit between the keys. The web between neighbouring channels is
+  0.6 mm at the surface.
+- The two upper screw bosses stop 3 mm below the top so they clear the keypad's
+  channels; ribs tie them to the side walls.
+- Switch: 6 × 6 × 5 mm. The stems rest 0.2 mm above each switch.
+
+</details>
+
+## Every part
+
+<PartsTable assembly="bar" />
+
+## Downloads
+
+<Downloads assembly="bar" />

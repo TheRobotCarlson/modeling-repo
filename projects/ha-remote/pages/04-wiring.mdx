@@ -1,0 +1,56 @@
+---
+title: Wiring
+summary: Which pad each wire goes to, and why the radio has to be put to sleep.
+---
+
+**Each button is a switch between one XIAO pin and ground; the battery goes on the
+XIAO's battery pads; two resistors let the firmware read the battery.** No other
+parts. The radio kit is used as it comes.
+
+| From | To | Note |
+|---|---|---|
+| LiPo + / − | XIAO `BAT+` / `BAT−` pads | Negative is the pad nearer the USB port (Seeed wiki) |
+| Main button | D1 (GPIO2) and GND | The puck's only button |
+| Key 1 – 4 (bar) | D2 – D5 (GPIO3 – GPIO6) and GND | One GND wire can daisy-chain all switches |
+| 1 MΩ | `BAT+` to D0 (GPIO1) | Top of the divider |
+| 1 MΩ + 100 nF | D0 (GPIO1) to GND | Bottom of the divider; the capacitor steadies the reading |
+
+<Callout title="Check before soldering: where the battery pads are with the radio board fitted.">
+  On the plain XIAO the battery pads are on the underside, and in this kit the
+  Wio-SX1262 board is stacked against that side. Find the pads, or a battery
+  connection on the Wio board, before cutting wires.
+</Callout>
+
+## Why these pins
+
+**Waking from deep sleep needs an RTC-capable pin, and on the ESP32-S3 those are
+GPIO0 to GPIO21.** The radio takes D8 – D10 (GPIO7 – 9) for SPI, and its control
+lines use GPIO38 – 42 through the board-to-board connector. That leaves D0 – D5
+(GPIO1 – 6) as the wake-capable pins on the edge: one for the battery, five for
+buttons. D6 and D7 (GPIO43 and 44) are free but cannot wake the chip.
+
+<details>
+<summary>The detail</summary>
+
+- **Pull-ups.** The switches pull a pin to ground, so each pin needs a pull-up that
+  stays on in deep sleep. ESPHome's multi-pin wake does not set one, so the firmware
+  turns on the RTC pull-ups just before sleeping (`common/rtc_pullups.h`). If a
+  remote wakes by itself, a 100 kΩ resistor from each button pin to 3V3 is the
+  fallback.
+- **GPIO3 is a strapping pin.** It only matters at power-on if JTAG has been
+  configured in eFuses, which it has not on a stock XIAO. ESPHome warns about it
+  anyway.
+- **The divider** draws about 2 µA all the time. That is the price of knowing the
+  charge level. The plain XIAO ESP32S3 has no battery-sense circuit of its own.
+- **Kit pins**, from Meshtastic's `seeed_xiao_s3` variant: NSS 41, RESET 42, BUSY
+  40, DIO1 39, SCK 7, MISO 8, MOSI 9, RF switch on DIO2 (also wired to GPIO38),
+  TCXO at 1.8 V on DIO3.
+
+</details>
+
+## The radio must be put to sleep
+
+**The SX1262 powers up in standby, drawing about 0.6 mA: forty times the ESP32's
+own deep sleep.** Left alone, it flattens the battery in under two weeks, even in
+the Wi-Fi version that never uses the radio. Both firmware configs send it to cold
+sleep as the last thing before every deep sleep. See [battery life](../power/).

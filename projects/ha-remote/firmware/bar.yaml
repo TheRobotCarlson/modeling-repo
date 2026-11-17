@@ -1,0 +1,91 @@
+# The bar: five buttons. Main = D1 (GPIO2), keys 1-4 = D2..D5 (GPIO3..GPIO6).
+# Events carry button 1 (main) to 5 (key 4).
+substitutions:
+  name: remote-bar
+  friendly_name: Remote bar
+  remote_id: "2"
+  static_ip: 192.168.1.232
+  wake_pins: "2, 3, 4, 5, 6"
+
+packages:
+  kit: !include common/kit.yaml
+  link: !include common/wifi.yaml      # or common/lora.yaml with a gateway
+
+deep_sleep:
+  id: sleeper
+  run_duration: 20s
+  esp32_ext1_wakeup:
+    mode: ANY_LOW
+    pins:
+      - pin:
+          number: GPIO2
+          allow_other_uses: true
+        on_wake:
+          - globals.set: { id: pressed, value: "1" }
+      - pin:
+          number: GPIO3
+          allow_other_uses: true
+        on_wake:
+          - globals.set: { id: pressed, value: "2" }
+      - pin:
+          number: GPIO4
+          allow_other_uses: true
+        on_wake:
+          - globals.set: { id: pressed, value: "3" }
+      - pin:
+          number: GPIO5
+          allow_other_uses: true
+        on_wake:
+          - globals.set: { id: pressed, value: "4" }
+      - pin:
+          number: GPIO6
+          allow_other_uses: true
+        on_wake:
+          - globals.set: { id: pressed, value: "5" }
+
+binary_sensor:
+  - platform: gpio
+    id: b1
+    pin: { number: GPIO2, allow_other_uses: true, inverted: true, mode: { input: true, pullup: true } }
+    on_press:
+      - globals.set: { id: pressed, value: "1" }
+      - script.execute: report
+  - platform: gpio
+    id: b2
+    pin: { number: GPIO3, allow_other_uses: true, inverted: true, mode: { input: true, pullup: true } }
+    on_press:
+      - globals.set: { id: pressed, value: "2" }
+      - script.execute: report
+  - platform: gpio
+    id: b3
+    pin: { number: GPIO4, allow_other_uses: true, inverted: true, mode: { input: true, pullup: true } }
+    on_press:
+      - globals.set: { id: pressed, value: "3" }
+      - script.execute: report
+  - platform: gpio
+    id: b4
+    pin: { number: GPIO5, allow_other_uses: true, inverted: true, mode: { input: true, pullup: true } }
+    on_press:
+      - globals.set: { id: pressed, value: "4" }
+      - script.execute: report
+  - platform: gpio
+    id: b5
+    pin: { number: GPIO6, allow_other_uses: true, inverted: true, mode: { input: true, pullup: true } }
+    on_press:
+      - globals.set: { id: pressed, value: "5" }
+      - script.execute: report
+
+script:
+  - id: go_to_sleep
+    mode: single
+    then:
+      - wait_until:
+          condition:
+            and:
+              - binary_sensor.is_off: b1
+              - binary_sensor.is_off: b2
+              - binary_sensor.is_off: b3
+              - binary_sensor.is_off: b4
+              - binary_sensor.is_off: b5
+          timeout: 5s
+      - deep_sleep.enter: sleeper

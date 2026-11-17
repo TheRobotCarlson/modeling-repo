@@ -1,0 +1,45 @@
+---
+title: What to measure
+summary: The guesses in the model, and the first prints and tests that settle them.
+---
+
+**The kit's outline is published; almost everything else inside is a stand-in.**
+Calipers on the real parts, a test print of the keypad, and a power meter settle
+the rest.
+
+## Before printing
+
+| Part | Model assumes | Why it matters |
+|---|---|---|
+| Kit stack height, XIAO on Wio board | 8.4 mm including USB-C | Sets the floor-to-top clearance |
+| USB-C port: height above the bottom of the stack, overhang past the board | 7.2 mm, 1.0 mm | Lines up with the hole in the wall |
+| XIAO charge LED position | Near the USB end | The light window above it |
+| Battery cell | 33 × 20 × 5 mm with its protection board | Pocket and stops on the base |
+| 12 mm switch height (puck) | 7.3 mm | Stem gap, 0.2 mm |
+| 6 mm switch height (bar) | 5.0 mm | Stem gap, 0.2 mm |
+| FPC antennas | 35 × 9 and 45 × 10 mm | Fit on the wall |
+| Where the battery pads are with the Wio board fitted | Reachable | Wiring |
+
+The stem gaps are the numbers to get right. Too large, and the button rolls its
+channel without clicking. Too small, and the switch is pressed all the time and
+the remote never sleeps. Both show up on the first try.
+
+## First prints
+
+1. **A keypad coupon.** One cap in a 40 mm square of shell with its TPU channel.
+   Prints in minutes. Checks that the TPU bonds to PLA, that the channel bridges,
+   and how the press feels.
+2. **The base alone.** Drop the kit, battery and switch in. Checks the cradles and
+   the switch height.
+3. **The full puck.**
+
+## After building
+
+| Test | How | Model says |
+|---|---|---|
+| Sleep current | µA meter in the battery lead | ~20 µA, not counting self-discharge |
+| Press, Wi-Fi | USB power meter, or a scope on a shunt | ~3 s awake, ~0.08 mAh |
+| Press to event in Home Assistant | Stopwatch, or the logbook | ~2.5 s |
+| Radio asleep | Sleep current with and without the cold-sleep line | ~0.6 mA difference |
+| Wake on every button | Press each one, watch the event's `button` | 1 to 5 |
+| Wi-Fi and LoRa range with the antennas inside | Walk around with it | Unknown |

@@ -1,0 +1,66 @@
+# LoRa gateway: a second XIAO ESP32S3 + Wio-SX1262 kit on USB power, always
+# listening. Turns each remote packet into the same Home Assistant event the Wi-Fi
+# remotes send, plus the signal strength.
+substitutions:
+  name: remote-gateway
+
+esphome:
+  name: ${name}
+  friendly_name: Remote gateway
+
+esp32:
+  board: seeed_xiao_esp32s3
+  variant: esp32s3
+  framework:
+    type: esp-idf
+
+logger:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  - platform: esphome
+
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO9
+  miso_pin: GPIO8
+
+sx126x:
+  id: radio
+  cs_pin: GPIO41
+  busy_pin: GPIO40
+  rst_pin: GPIO42
+  dio1_pin: GPIO39
+  hw_version: sx1262
+  rf_switch: true
+  tcxo_voltage: 1_8V
+  tcxo_delay: 5ms
+  frequency: 915MHz
+  modulation: LORA
+  bandwidth: 125_0kHz
+  spreading_factor: 7
+  coding_rate: CR_4_5
+  preamble_size: 8
+  payload_length: 6
+  crc_enable: true
+  rx_start: true
+  on_packet:
+    then:
+      - if:
+          condition:
+            lambda: "return x.size() == 6 && x[0] == 0xA5;"
+          then:
+            - homeassistant.event:
+                event: esphome.remote_button
+                data:
+                  remote: !lambda "return x[1] == 1 ? std::string(\"remote-puck\") : x[1] == 2 ? std::string(\"remote-bar\") : \"remote-\" + to_string(x[1]);"
+                  button: !lambda "return to_string(x[2]);"
+                  battery_v: !lambda 'return str_sprintf("%.2f", ((x[3] << 8) | x[4]) / 1000.0f);'
+                  rssi: !lambda 'return str_sprintf("%.0f", rssi);'

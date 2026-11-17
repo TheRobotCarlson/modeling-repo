@@ -1,0 +1,65 @@
+---
+title: The puck
+summary: One big button. Two prints, four screws.
+---
+
+**A 72 mm puck, 16 mm tall, where the whole middle is the button.** The cap is 31
+mm across and sits flush with the top. A 12 mm tact switch under its centre gives
+the click.
+
+<ModelViewer assembly="puck" height={540} />
+
+## How the button works
+
+**The cap floats in a ring of 75A TPU, which is its spring, its hinge and its
+seal.** Around the cap the TPU dips into a U-shaped channel 2.4 mm deep. Pressing
+the cap rolls that channel. The stem under the cap starts 0.2 mm above the switch,
+so it clicks after about half a millimetre of travel. Pressed off-centre, the cap
+tips, and the centre still moves enough to click.
+
+<details>
+<summary>The detail</summary>
+
+- Channel: 2.6 mm wide, 0.8 mm walls, 2.4 mm deep. The TPU panel is 1 mm thick at
+  the surface and runs 1.5 mm under the shell's top as a lap joint.
+- The cap has a shallow dish, 0.5 mm deep, so a thumb finds the middle.
+- The tact switch stops the travel. Typical 12 mm switches take far more than a
+  thumb can push; if one does not, a stop ring under the cap is the fix.
+- A 0.6 mm thin spot in the top, over the XIAO's charge LED, lets the light through
+  pale PLA. Its position is estimated.
+
+</details>
+
+## Inside
+
+**Everything sits on the base: battery across the front, the kit at the back, the
+switch in the middle.** The kit's USB-C port lines up with a hole in the back wall.
+The two FPC antennas curl around the inside of the wall, left and right, away from
+the battery.
+
+## Printing
+
+1. **Top: shell, TPU ring and cap in one print, top face down.** The top is flat
+   on the plate, so the cap and ring come out with a plate finish. The U-channel
+   opens towards the plate and needs only a 1 mm bridge. Use dissolvable support
+   for the inside of the shell.
+2. **Base: floor down.** The TPU foot ring stands 0.6 mm below the floor, so the
+   floor above it needs support; the two TPU strips in the kit's cradle hold it in
+   place.
+
+<details>
+<summary>Bonding TPU to PLA</summary>
+
+The ring meets the PLA on two faces: the outer edge, and the top of the 1.5 mm lap
+under the shell. The cap meets the ring along its whole edge. A wider lap, or a few
+holes in the shell's lip for the TPU to fill, are the next steps if the bond peels.
+
+</details>
+
+## Every part
+
+<PartsTable assembly="puck" />
+
+## Downloads
+
+<Downloads assembly="puck" />

@@ -1,0 +1,45 @@
+---
+title: Battery life
+summary: On Wi-Fi the presses set it; on LoRa the sleep current does.
+---
+
+**With a 250 mAh cell, about 140 days per charge on Wi-Fi at ten presses a day, and
+270 on LoRa.** Sitting untouched, either one lasts about 300 days. All of the
+currents are estimates or datasheet figures, not measurements.
+
+## One press
+
+<Chart sim="press" />
+
+**A Wi-Fi press costs about 13 times the charge of a LoRa press.** Most of it is
+joining the network and waiting for Home Assistant to connect. The LoRa packet
+itself is on air for 31 ms.
+
+<Params sim="press" />
+
+## Days per charge
+
+<Chart sim="life" />
+
+**On Wi-Fi, presses cost as much as sleeping from about nine a day upwards. On
+LoRa, sleep dominates until more than a hundred a day.** Of the 30 µA asleep, the
+ESP32-S3's own deep sleep is 14 µA. The bottom line is what happens if the radio is
+never put to sleep: 13 days.
+
+<Params sim="life" />
+
+<details>
+<summary>The model</summary>
+
+Days per charge = usable charge ÷ (sleep current × 24 h + presses per day ×
+charge per press). Usable charge is 85 % of 250 mAh. The sleep current adds the
+XIAO's deep sleep (14 µA, Seeed), the SX1262 in sleep (0.6 µA, ESPHome docs), the
+battery divider (2 µA), a typical cell protection chip (3 µA, estimate) and
+self-discharge of 3 % a month, counted as a current (10 µA). A press is a sequence
+of fixed-current phases; the LoRa time on air uses Semtech's formula for SF7,
+125 kHz, a 6-byte payload. The script is `physics/power.py`.
+
+A USB power meter between a charger and the remote measures the press side.
+Sleep current needs a meter on the battery lead with a µA range.
+
+</details>

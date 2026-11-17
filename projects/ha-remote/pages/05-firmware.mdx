@@ -1,0 +1,76 @@
+---
+title: Firmware
+summary: ESPHome configs for both remotes, over Wi-Fi now or LoRa later.
+---
+
+**Each remote wakes on a press, sends Home Assistant an event saying which button,
+and goes back to sleep.** The configs are in
+[`projects/ha-remote/firmware`](https://github.com/TheRobotCarlson/modeling-repo/tree/main/projects/ha-remote/firmware).
+They pass `esphome config` and build with `esphome compile` (ESPHome 2026.10);
+they have not yet run on the board.
+
+| File | What it is |
+|---|---|
+| `puck.yaml`, `bar.yaml` | One per remote: buttons, wake pins |
+| `common/kit.yaml` | The board, the radio, the battery reading, the sleep routine |
+| `common/wifi.yaml` | Report over Wi-Fi and the native API (the default) |
+| `common/lora.yaml` | Report with one LoRa packet instead |
+| `gateway.yaml` | LoRa receiver for a second kit on USB power |
+
+## Using it in Home Assistant
+
+**Every press arrives as the event `esphome.remote_button`.** Its data has the
+remote's name, the button number and the battery voltage. An automation that
+toggles a light from the puck:
+
+```yaml
+triggers:
+  - trigger: event
+    event_type: esphome.remote_button
+    event_data:
+      remote: remote-puck
+      button: "1"
+actions:
+  - action: light.toggle
+    target:
+      entity_id: light.living_room
+```
+
+Two settings to make once. In the ESPHome integration, turn on **Allow the device
+to perform Home Assistant actions** for each remote, or the events are dropped.
+Then create a toggle helper, `input_boolean.remotes_stay_awake`. While it is on, a
+remote that wakes stays awake for over-the-air updates.
+
+## Wi-Fi or LoRa
+
+**Wi-Fi needs nothing extra but keeps the remote awake for about three seconds per
+press. LoRa is fast and cheap per press, but needs a gateway.**
+
+| | Wi-Fi | LoRa |
+|---|---|---|
+| Extra hardware | None | A second kit, on USB, as the gateway |
+| Press to event | ~2.5 s (EST) | Well under 1 s (EST) |
+| Charge per press | ~0.08 mAh | ~0.006 mAh |
+| Range | Your Wi-Fi | Whole house and garden |
+| Security | Encrypted API | Plain packet; could be replayed |
+
+The switch is one line in `puck.yaml` or `bar.yaml`: change the `link:` package
+from `common/wifi.yaml` to `common/lora.yaml`.
+
+<details>
+<summary>How a press is handled</summary>
+
+1. Deep sleep is woken by any button pin going low (`esp32_ext1_wakeup`, `ANY_LOW`).
+   Each pin's `on_wake` records which button it was.
+2. `on_boot` runs the `report` script. Wi-Fi: wait up to 8 s for Home Assistant to
+   connect, fire the event, wait 300 ms. LoRa: send a 6-byte packet (marker, remote
+   id, button, battery mV, sequence number).
+3. `go_to_sleep` waits for every button to be released, since a held button would
+   wake the chip straight back up, and enters deep sleep.
+4. `on_shutdown` puts the SX1262 in cold sleep and turns on the RTC pull-ups.
+
+A 20 s `run_duration` is the safety net: whatever happens, the remote sleeps again.
+Wi-Fi uses a static IP and `fast_connect` because DHCP and scanning cost most of a
+second each. Set `static_ip` in each remote's file.
+
+</details>

@@ -1,0 +1,50 @@
+---
+title: Overview
+summary: Two battery remotes that sleep until pressed, then tell Home Assistant which button it was.
+---
+
+**Two remotes on the XIAO ESP32S3 + Wio-SX1262 kit: a puck with one big button,
+and a bar with five.** Each sleeps at about 30 µA, wakes on a press, reports the
+button to Home Assistant through ESPHome, and goes back to sleep. Both charge over
+USB-C.
+
+<Stats>
+  <Stat value="72 × 16 mm" label="puck" />
+  <Stat value="44 × 120 × 15 mm" label="bar" />
+  <Stat value="~5 months" label="per charge, Wi-Fi, 10 presses a day" />
+  <Stat value="0" label="printed and tried" />
+</Stats>
+
+<Callout title="Modeled, not built.">
+  The kit's outline comes from Seeed; its heights, the battery, switches and antennas
+  are stand-in sizes. The firmware passes ESPHome's config check but has not run on
+  the board. [What to measure](./measure/) lists what to check first.
+</Callout>
+
+<ModelViewer assembly="puck" height={480} />
+
+## The idea in one print
+
+**Each remote's top, buttons and springs come off the printer as one part.** The
+shell is PLA. The buttons are rigid PLA caps held in a 75A TPU panel. A U-shaped
+channel in the TPU around each cap is its spring and its seal. Dissolvable support
+fills the gaps during the print, so nothing needs assembling but the base.
+
+## Where this stands
+
+1. **[The puck](./puck/)**: one 31 mm button over a 12 mm switch. Modeled.
+2. **[The bar](./bar/)**: a main button and four keys. Modeled.
+3. **[Wiring](./wiring/)**: two wires per button, a battery, and two resistors to read its voltage.
+4. **[Firmware](./firmware/)**: ESPHome configs for both, over Wi-Fi or LoRa. Config-checked.
+5. **[Battery life](./power/)**: about 140 days on Wi-Fi, 270 on LoRa, at ten presses a day.
+
+<details>
+<summary>Why not just use the radio kit's own button?</summary>
+
+The Wio-SX1262 board has a user button on GPIO21, and that is the cheapest
+single-button remote there is. Its position on the board is not published, so a
+cap cannot be designed over it yet. It is also small and sits between the boards.
+A separate 12 mm switch gives a bigger, firmer press and lets the kit sit wherever
+the USB port needs it.
+
+</details>

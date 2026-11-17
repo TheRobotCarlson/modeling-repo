@@ -1,0 +1,41 @@
+# The puck: one button on D1 (GPIO2).
+substitutions:
+  name: remote-puck
+  friendly_name: Remote puck
+  remote_id: "1"
+  static_ip: 192.168.1.231     # pick a free address on your network
+  wake_pins: "2"
+
+packages:
+  kit: !include common/kit.yaml
+  link: !include common/wifi.yaml      # or common/lora.yaml with a gateway
+
+deep_sleep:
+  id: sleeper
+  run_duration: 20s                    # safety net: never stay up longer
+  esp32_ext1_wakeup:
+    mode: ANY_LOW
+    pins:
+      - pin:
+          number: GPIO2
+          allow_other_uses: true
+        on_wake:
+          - globals.set: { id: pressed, value: "1" }
+
+binary_sensor:
+  - platform: gpio
+    id: b1
+    pin: { number: GPIO2, allow_other_uses: true, inverted: true, mode: { input: true, pullup: true } }
+    on_press:
+      - globals.set: { id: pressed, value: "1" }
+      - script.execute: report
+
+script:
+  - id: go_to_sleep
+    mode: single
+    then:
+      - wait_until:                    # ANY_LOW would wake us straight back up
+          condition:
+            binary_sensor.is_off: b1
+          timeout: 5s
+      - deep_sleep.enter: sleeper

@@ -1,0 +1,4 @@
+title: Home Assistant remote
+summary: Two rechargeable remotes on a XIAO ESP32S3 + Wio-SX1262 kit, running ESPHome. One big button, or five, with the caps printed in place.
+status: concept   # concept | modeled | prototyped | tested
+order: 2

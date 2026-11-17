@@ -1,0 +1,77 @@
+# XIAO ESP32S3 + Wio-SX1262 as a sleeping remote. Shared by puck.yaml and bar.yaml.
+# Expects substitutions: name, friendly_name, wake_pins ("2, 3, ..." GPIO numbers).
+#
+# Pins (Meshtastic variant seeed_xiao_s3, Seeed wiki):
+#   SX1262  SCK 7, MISO 8, MOSI 9, NSS 41, RESET 42, BUSY 40, DIO1 39; DIO2 drives
+#           the RF switch; TCXO at 1.8 V on DIO3
+#   battery D0 = GPIO1 through a 1M/1M divider (the plain XIAO has no battery sense)
+#   buttons D1..D5 = GPIO2..GPIO6, switch to GND, RTC pull-ups
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  includes:
+    - common/rtc_pullups.h
+  on_boot:
+    priority: -100
+    then:
+      - script.execute: report
+  on_shutdown:
+    then:
+      # The SX1262 powers up in standby at ~0.6 mA, 40x the ESP32's deep sleep.
+      # Every sleep starts by putting it in cold sleep.
+      - sx126x.set_mode_sleep:
+          cold: true
+      - lambda: "rtc_pullups::enable({${wake_pins}});"
+
+esp32:
+  board: seeed_xiao_esp32s3
+  variant: esp32s3
+  framework:
+    type: esp-idf
+
+logger:
+  level: INFO
+
+globals:
+  - id: pressed          # which button woke us or was pressed last; 0 = none
+    type: int
+    initial_value: "0"
+
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO9
+  miso_pin: GPIO8
+
+sx126x:
+  id: radio
+  cs_pin: GPIO41
+  busy_pin: GPIO40
+  rst_pin: GPIO42
+  dio1_pin: GPIO39
+  hw_version: sx1262
+  rf_switch: true
+  tcxo_voltage: 1_8V
+  tcxo_delay: 5ms
+  frequency: 915MHz      # US; use 868MHz in the EU
+  modulation: LORA
+  bandwidth: 125_0kHz
+  spreading_factor: 7
+  coding_rate: CR_4_5
+  preamble_size: 8
+  payload_length: 6
+  crc_enable: true
+  pa_power: 14
+  rx_start: false
+
+sensor:
+  - platform: adc
+    id: vbat
+    name: Battery
+    pin: GPIO1
+    attenuation: 12db
+    samples: 8
+    update_interval: never
+    accuracy_decimals: 2
+    filters:
+      - multiply: 2.0

@@ -1,0 +1,56 @@
+# Link: Wi-Fi + the Home Assistant native API. Needs nothing but this device.
+# A press costs ~3 s awake. Fires the Home Assistant event `esphome.remote_button`
+# with data {remote, button, battery_v}. In Home Assistant, turn on "Allow the
+# device to perform Home Assistant actions" for this device or the event is dropped.
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  power_save_mode: none
+  manual_ip:              # skipping DHCP saves most of a second per press
+    static_ip: ${static_ip}
+    gateway: !secret gateway
+    subnet: !secret subnet
+    dns1: !secret gateway
+
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  - platform: esphome
+
+binary_sensor:
+  # Turn this helper on in Home Assistant to keep remotes awake for OTA updates.
+  - platform: homeassistant
+    id: stay_awake
+    entity_id: input_boolean.remotes_stay_awake
+
+script:
+  - id: report
+    mode: queued
+    then:
+      - if:
+          condition:
+            lambda: "return id(pressed) > 0;"
+          then:
+            - component.update: vbat
+            - wait_until:
+                condition: api.connected
+                timeout: 8s
+            - if:
+                condition: api.connected
+                then:
+                  - homeassistant.event:
+                      event: esphome.remote_button
+                      data:
+                        remote: ${name}
+                        button: !lambda "return to_string(id(pressed));"
+                        battery_v: !lambda 'return str_sprintf("%.2f", id(vbat).state);'
+                  - delay: 300ms
+      - if:
+          condition:
+            binary_sensor.is_off: stay_awake
+          then:
+            - script.execute: go_to_sleep

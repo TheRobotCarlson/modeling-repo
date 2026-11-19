@@ -1,0 +1,230 @@
+# Automated strawberry dicer: XIAO ESP32S3, three TMC2209 step/dir drivers (two on
+# the platen, wired in parallel), three servos. ESPHome; shows up in Home Assistant
+# with buttons for "Top a row" and "Dice", and a status text.
+#
+# One button on the machine: a click tops the row in the tray and tips it into the
+# hopper; a long press dices what is in the hopper.
+#
+# The lid switch cuts the 24 V to the drivers and servos in hardware. The firmware
+# also reads it and stops between moves.
+#
+# Pins (XIAO): D0 platen STEP, D1 platen DIR, D2 bow STEP, D3 bow DIR, D4 arm servo,
+# D5 tilt servo, D6 flap servo, D7 button, D8 platen home switch (top), D9 bow home
+# switch (front), D10 lid switch.
+substitutions:
+  name: berry-dicer
+  # Platen: T8 lead screw, 2 mm lead, 200 step motor at 1/4 step = 400 steps per mm.
+  # Positions are steps below the top switch (platen face 330 mm off the table).
+  platen_steps_mm: "400"
+  start_gap_mm: "48"          # quick move down to this far above the grid, then 12 mm steps
+  # Wire bow: GT2 belt, 20 tooth pulley (40 mm per turn), 1/4 step = 20 steps per mm.
+  bow_steps_mm: "20"
+  bow_travel_mm: "184"        # front park to back park
+  # Servo levels, -1 to 1. EST: set them on the bench.
+  arm_up: "-0.6"
+  arm_down: "0.35"
+  flap_shut: "-0.8"
+  flap_open: "0.5"
+  tilt_flat: "-0.9"
+  tilt_dump: "0.7"
+
+esphome:
+  name: ${name}
+  friendly_name: Strawberry dicer
+  on_boot:
+    priority: -100
+    then:
+      - script.execute: home
+
+esp32:
+  board: seeed_xiao_esp32s3
+  variant: esp32s3
+  framework:
+    type: esp-idf
+
+logger:
+api:
+  encryption:
+    key: !secret api_key
+ota:
+  - platform: esphome
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+globals:
+  - id: bow_at_back
+    type: bool
+    initial_value: "false"
+  - id: layer
+    type: int
+    initial_value: "0"
+
+stepper:
+  - platform: a4988             # step/dir, as the TMC2209 runs in standalone mode
+    id: platen
+    step_pin: GPIO1
+    dir_pin: GPIO2
+    max_speed: 6000 steps/s
+    acceleration: 8000 steps/s^2
+    deceleration: 8000 steps/s^2
+  - platform: a4988
+    id: bow
+    step_pin: GPIO3
+    dir_pin: GPIO4
+    max_speed: 4000 steps/s
+    acceleration: 6000 steps/s^2
+    deceleration: 6000 steps/s^2
+
+output:
+  - platform: ledc
+    id: arm_pwm
+    pin: GPIO5
+    frequency: 50Hz
+  - platform: ledc
+    id: tilt_pwm
+    pin: GPIO6
+    frequency: 50Hz
+  - platform: ledc
+    id: flap_pwm
+    pin: GPIO43
+    frequency: 50Hz
+
+servo:
+  - id: arm
+    output: arm_pwm
+    transition_length: 0.4s
+  - id: tilt
+    output: tilt_pwm
+    transition_length: 1.2s
+  - id: flap
+    output: flap_pwm
+    transition_length: 0.3s
+
+binary_sensor:
+  - platform: gpio
+    id: platen_home
+    pin: { number: GPIO7, inverted: true, mode: { input: true, pullup: true } }
+  - platform: gpio
+    id: bow_home
+    pin: { number: GPIO8, inverted: true, mode: { input: true, pullup: true } }
+  - platform: gpio
+    id: lid_open
+    name: Lid open
+    pin: { number: GPIO9, mode: { input: true, pullup: true } }    # switch closes when shut
+  - platform: gpio
+    id: start_button
+    pin: { number: GPIO44, inverted: true, mode: { input: true, pullup: true } }
+    on_click:
+      - min_length: 50ms
+        max_length: 800ms
+        then:
+          - script.execute: top_row
+      - min_length: 1s
+        max_length: 5s
+        then:
+          - script.execute: dice
+
+text_sensor:
+  - platform: template
+    id: status
+    name: Status
+
+button:
+  - platform: template
+    name: Top a row
+    on_press:
+      - script.execute: top_row
+  - platform: template
+    name: Dice
+    on_press:
+      - script.execute: dice
+  - platform: template
+    name: Home
+    on_press:
+      - script.execute: home
+
+script:
+  - id: home
+    mode: single
+    then:
+      - text_sensor.template.publish: { id: status, state: Homing }
+      - servo.write: { id: arm, level: "${arm_up}" }
+      - servo.write: { id: flap, level: "${flap_shut}" }
+      - servo.write: { id: tilt, level: "${tilt_flat}" }
+      - stepper.set_target: { id: platen, target: 400000 }          # up until the switch
+      - wait_until: { condition: { binary_sensor.is_on: platen_home }, timeout: 60s }
+      - stepper.report_position: { id: platen, position: 0 }
+      - stepper.set_target: { id: platen, target: 0 }
+      - stepper.set_target: { id: bow, target: -20000 }             # forward until the switch
+      - wait_until: { condition: { binary_sensor.is_on: bow_home }, timeout: 20s }
+      - stepper.report_position: { id: bow, position: 0 }
+      - stepper.set_target: { id: bow, target: 0 }
+      - globals.set: { id: bow_at_back, value: "false" }
+      - text_sensor.template.publish: { id: status, state: Ready }
+
+  - id: top_row
+    mode: single
+    then:
+      - if:
+          condition: { binary_sensor.is_on: lid_open }
+          then:
+            - text_sensor.template.publish: { id: status, state: Close the lid }
+            - script.stop: top_row
+      - text_sensor.template.publish: { id: status, state: Topping }
+      - servo.write: { id: arm, level: "${arm_down}" }               # wire through the berries, into the slot
+      - delay: 800ms
+      - servo.write: { id: flap, level: "${flap_open}" }             # tops into the bin
+      - delay: 700ms
+      - servo.write: { id: flap, level: "${flap_shut}" }
+      - delay: 400ms
+      - servo.write: { id: tilt, level: "${tilt_dump}" }             # berries into the hopper
+      - delay: 1800ms
+      - servo.write: { id: tilt, level: "${tilt_flat}" }
+      - delay: 1500ms
+      - servo.write: { id: arm, level: "${arm_up}" }
+      - text_sensor.template.publish: { id: status, state: Ready }
+
+  - id: sweep
+    mode: single
+    then:
+      - lambda: |-
+          int32_t end = id(bow_at_back) ? 0 : ${bow_travel_mm} * ${bow_steps_mm};
+          id(bow).set_target(end);
+          id(bow_at_back) = !id(bow_at_back);
+      - wait_until: { condition: { lambda: "return id(bow).has_reached_target();" }, timeout: 10s }
+
+  - id: dice
+    mode: single
+    then:
+      - if:
+          condition: { binary_sensor.is_on: lid_open }
+          then:
+            - text_sensor.template.publish: { id: status, state: Close the lid }
+            - script.stop: dice
+      - text_sensor.template.publish: { id: status, state: Dicing }
+      # Down fast to just above the tallest berry, then 12 mm steps, sweeping after each.
+      - lambda: |-
+          // platen face up = 330 mm; grid top = 132 mm
+          id(layer) = ${start_gap_mm} / 12;
+          id(platen).set_target(-(330 - 132 - ${start_gap_mm}) * ${platen_steps_mm});
+      - wait_until: { condition: { lambda: "return id(platen).has_reached_target();" }, timeout: 40s }
+      - while:
+          condition:
+            lambda: "return id(layer) > 0;"
+          then:
+            - lambda: |-
+                id(layer) -= 1;
+                id(platen).set_target(-(330 - 132 - 12 * id(layer)) * ${platen_steps_mm});
+            - wait_until: { condition: { lambda: "return id(platen).has_reached_target();" }, timeout: 10s }
+            - script.execute: sweep
+            - script.wait: sweep
+            - if:
+                condition: { binary_sensor.is_on: lid_open }
+                then:
+                  - text_sensor.template.publish: { id: status, state: "Stopped, lid open" }
+                  - script.stop: dice
+      # The last 12 mm stays in the grid; the next batch pushes it out.
+      - stepper.set_target: { id: platen, target: 0 }
+      - wait_until: { condition: { lambda: "return id(platen).has_reached_target();" }, timeout: 40s }
+      - text_sensor.template.publish: { id: status, state: Ready }

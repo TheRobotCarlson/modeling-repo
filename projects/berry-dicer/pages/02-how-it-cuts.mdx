@@ -1,0 +1,45 @@
+---
+title: How it cuts
+summary: The top is cut from the leafy end; the cubes come from the grid's height, its cells and the step.
+---
+
+**Topping: a row of berries lies on its side with every leafy end against a
+fence, and a wire comes down 5 mm in front of it.** So the cut follows each berry,
+not the tray: a 24 mm berry and a 36 mm berry lose the same 5 mm. Then the flap
+holding the tops flips down and drops them in the compost.
+
+**Dicing: the grid is 12 mm tall with 12 mm cells, and the platen moves 12 mm per
+step.** Each step pushes exactly one grid height of fruit out of the bottom, and a
+wire sweeping just under the grid cuts it off as a layer of 12 mm cubes. The tips
+and the outside of each berry come out as smaller pieces. The last 12 mm stays in
+the grid until the next batch pushes it out.
+
+## How much the top takes
+
+<Chart sim="waste" />
+
+**A 5 mm cut takes about 15 % of a medium berry and 22 % of a small one (EST).**
+The leafy end is the widest part, so every millimetre there is a lot of fruit. A
+knife that cones out just the hull loses less. The fence moves in 1 mm steps from 3 to 9 mm. Start at 4 or 5 mm
+and see what is left on the tops.
+
+<Params sim="waste" />
+
+<details>
+<summary>The detail</summary>
+
+- **Why a wire.** Egg slicers cut strawberries cleanly, and a wire has no edge to
+  keep sharp. Both cutting wires are 0.5 mm stainless (EST gauge) on stainless
+  frames. Only the grid needs sharpening, because a wire grid would sag under the
+  press.
+- **Why the berries lie down.** Lying on its side, a berry is supported along its
+  length and the fence finds its leafy end. Standing them up tip-down in holes
+  would let tall berries stick up more than short ones, and the cut would no
+  longer follow each berry.
+- **Orientation in the hopper.** Once topped, a berry is just fruit: it can land on
+  its side, its cut face or its tip, and the cubes come out the same.
+- **The shape model.** The blunt leafy end is half a flattened ellipsoid,
+  W/2 across and 0.3 W deep. The rest is a cone, with the length 1.2 W. The real
+  shoulders vary, which is why the cut distance is adjustable.
+
+</details>

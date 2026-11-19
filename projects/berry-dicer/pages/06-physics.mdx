@@ -1,0 +1,44 @@
+---
+title: Time and force
+summary: How hard the press works, and whether it saves time over a knife.
+---
+
+## Force on the platen
+
+<Chart sim="force" />
+
+**For 27 berries lying in the hopper the platen peaks at about 420 N, if fruit
+takes 0.1 N per millimetre of edge to cut (EST).** The force is highest when
+the grid is cutting most berries across their widest part. That cutting figure is
+the main unknown, which is why the chart shows half and double it. Weighing one berry
+pushed through a piece of the grid on a kitchen scale settles it (see
+[what to measure](../measure/)).
+
+<Params sim="force" />
+
+<details>
+<summary>The model</summary>
+
+- A grid with cells c across, cutting a section of area A, has 2A/c of edge in
+  that section. The force is that length times the cutting force per millimetre.
+- Each berry lying in the hopper is taken as an ellipsoid, W × W × 1.2 W. The grid's
+  top plane cuts each one at the depth it has been pushed in.
+- 27 berries, 24 to 36 mm across, random but fixed (seed 4).
+- Friction of the cubes in the cells is left out. So is the wire's own cut, which
+  runs sideways and is small.
+- **The manual press:** the 15.3 mm pinion and 215 mm handle with 80 %
+  efficiency give 37 N at the knob. **The automated press:** two motors at 0.3 N·m
+  each, on 2 mm-lead screws with brass nuts (friction 0.15), push about 700 N.
+
+</details>
+
+## Time each week
+
+<Chart sim="time" />
+
+**At 60 berries a week: about 11 minutes with a knife, 6.5 with the manual
+tools and 4.7 automated, counting washing up (EST).** The tools pay back above
+about 20 berries a week. Most of what is left is laying berries in the tray at
+1.5 s each. Every timing here is a guess to replace with a stopwatch.
+
+<Params sim="time" />

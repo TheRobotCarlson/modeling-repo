@@ -1,0 +1,209 @@
+# Bill of materials: the manual kit (topper + press) and the automated machine.
+# The stainless cartridge (hopper, grid, platen, wire bow) fits both frames: buy
+# one if you build both. Laser-cut parts are custom, so they have no MPN; the
+# DXFs come from the STEP downloads. Leave mpn/unit_cost empty until a real part
+# is chosen; the site flags those rows as "to select".
+currency: USD
+items:
+  # --- food contact: 304 stainless, laser cut and bent to order --------------------
+  - ref: grid
+    description: Grid strips, 0.030 in 304 stainless, 12 x 312 mm and 25 x 156 mm, 12 mm tall, slotted half depth
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: SendCutSend
+    url: https://sendcutsend.com/stainless-steel/
+    unit_cost:
+    notes: Both. One set of 37. Sharpen the top edge of each before assembly (whetstone, about 20 degrees, one side).
+  - ref: hopper
+    description: Hopper blank, 0.048 in 304 stainless, bent into a 312 x 156 x 72 mm box with a 30 mm top flange
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: SendCutSend
+    url: https://sendcutsend.com/stainless-steel/
+    unit_cost:
+    notes: Both. Bending service; slots in the bottom 12 mm take the grid strips' tabs.
+  - ref: platen
+    description: Platen, 0.125 in 304 stainless, 309 x 153 mm face with 15 mm edges bent up
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: SendCutSend
+    url: https://sendcutsend.com/stainless-steel/
+    unit_cost:
+    notes: Both. Bolts to the press's stem foot or the automated machine's posts.
+  - ref: bow
+    description: Wire bow, 0.125 in 304 stainless, flat U 372 x 34 mm
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: SendCutSend
+    url: https://sendcutsend.com/stainless-steel/
+    unit_cost:
+    notes: Both. Holds the dicing wire across the tips of its arms.
+  - ref: tray
+    description: Topper tray and fence flap, 0.060 in 304 stainless, bent, 312 mm wide
+    qty: 2
+    manufacturer: ""
+    mpn: ""
+    supplier: SendCutSend
+    url: https://sendcutsend.com/stainless-steel/
+    unit_cost:
+    notes: One for the manual topper, one for the automated machine (same part).
+  - ref: arm
+    description: Topper wire arms, 0.125 in 304 stainless, pair
+    qty: 2
+    manufacturer: ""
+    mpn: ""
+    supplier: SendCutSend
+    url: https://sendcutsend.com/stainless-steel/
+    unit_cost:
+    notes: Manual and automated arms differ in length; one pair each.
+  - ref: wire
+    description: Stainless steel wire, about 0.5 mm (0.020 in), spring temper, for the cutting wires
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: McMaster-Carr
+    url: https://www.mcmaster.com/stainless-steel-wire/
+    unit_cost:
+    notes: Both. Cheese-wire gauge (EST). Three wires; keep spares, they are what wears.
+  - ref: rod
+    description: 304 stainless rod, 6 mm, for the pivots and the bow's push rod
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: McMaster-Carr
+    url: https://www.mcmaster.com/stainless-steel-rods/
+    unit_cost:
+    notes: Both. About 1.2 m in all.
+  - ref: posts
+    description: 304 stainless rod, 12 mm, two 70 mm platen posts
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: McMaster-Carr
+    url: https://www.mcmaster.com/stainless-steel-rods/
+    unit_cost:
+    notes: Automated.
+  # --- manual press -------------------------------------------------------------------
+  - ref: plunger
+    description: Ball spring plunger, M8, stainless
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: McMaster-Carr
+    url: https://www.mcmaster.com/spring-plungers/
+    unit_cost:
+    notes: Manual press. Clicks into the index wheel every 12 mm.
+  - ref: shaft
+    description: Steel shaft, 8 mm, 130 mm, for the pinion and handle
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: McMaster-Carr
+    url: https://www.mcmaster.com/shafts/
+    unit_cost:
+    notes: Manual press.
+  # --- automated machine ----------------------------------------------------------------
+  - ref: stepper
+    description: NEMA 17 stepper motor, 1.8 degree, about 0.45 N m or more
+    qty: 3
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Automated. Two on the lead screws, one on the bow's belt.
+  - ref: leadscrew
+    description: T8 lead screw, 2 mm lead, 300 mm, stainless, with brass nut and coupler
+    qty: 2
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Automated. 2 mm lead, not the common 8 mm. See the physics page.
+  - ref: driver
+    description: TMC2209 stepper driver module, step/dir standalone
+    qty: 3
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Automated. Two wired in parallel to the same step and direction pins.
+  - ref: mcu
+    description: Seeed Studio XIAO ESP32S3
+    qty: 1
+    manufacturer: Seeed Studio
+    mpn: ""
+    supplier: Seeed Studio
+    url: https://www.seeedstudio.com/
+    unit_cost:
+    notes: Automated. Runs ESPHome (firmware/dicer.yaml).
+  - ref: servo
+    description: Digital servo, 25 kg cm class, metal gear, standard size (DS3225 class)
+    qty: 3
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Automated. Topper arm, tray tilt, fence flap.
+  - ref: psu
+    description: Enclosed power supply, 24 V 100 W
+    qty: 1
+    manufacturer: Mean Well
+    mpn: LRS-100-24
+    supplier: DigiKey
+    url: https://www.digikey.com/en/products/result?keywords=LRS-100-24
+    unit_cost:
+    notes: Automated. Search link; product page not checked.
+  - ref: buck
+    description: Step-down regulator, 24 V to 6 V, 5 A or more
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Automated. Servo supply.
+  - ref: extrusion
+    description: 2020 aluminium extrusion, 2 x 480 mm and 1 x 500 mm; 2040, 1 x 480 mm for the crosshead
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Automated.
+  - ref: belt
+    description: GT2 belt 6 mm, 20-tooth pulley, idler and clamp
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Automated. The bow's drive.
+  - ref: switches
+    description: Microswitch with lever, three (two home switches, the lid), and a panel push button
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Automated. The lid switch also breaks the 24 V to the drivers and servos.
+  # --- printed -----------------------------------------------------------------------------
+  - ref: pla
+    description: Bambu Lab PLA Pure, 1 kg spools
+    qty: 4
+    manufacturer: Bambu Lab
+    mpn: ""
+    supplier: Bambu Lab
+    url: https://us.store.bambulab.com/products/pla-pure
+    unit_cost:
+    notes: On hand. Frames and brackets only; no printed part touches the fruit.

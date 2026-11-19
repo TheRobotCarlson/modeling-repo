@@ -3,7 +3,7 @@
 ESPHome configs. Copy `secrets.example.yaml` to `secrets.yaml` and fill it in, set
 `static_ip` in each remote's file, then:
 
-    esphome run puck.yaml      # or bar.yaml, gateway.yaml
+    esphome run puck.yaml      # or bar.yaml, gateway-eth.yaml
 
 The first flash is over USB-C. After that, a remote listens for updates while it is
 on USB power, or while `input_boolean.remotes_stay_awake` is on in Home Assistant.
@@ -12,4 +12,4 @@ on USB power, or while `input_boolean.remotes_stay_awake` is on in Home Assistan
 register writes from the datasheet, untested.
 
 Checked with ESPHome 2026.10.2: all configs pass `esphome config`, and puck (Wi-Fi),
-bar (LoRa) and the gateway build with `esphome compile`. Not yet run on hardware.
+bar (LoRa), `gateway.yaml` and `gateway-eth.yaml` build with `esphome compile`. Not yet run on hardware.

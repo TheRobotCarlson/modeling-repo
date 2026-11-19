@@ -11,6 +11,13 @@ for $6. Modeled, not built. The firmware compiles.
 
 <ModelViewer assembly="gateway" height={480} />
 
+<Callout title="Chosen board: LilyGO T-ETH-Elite with its SX1262 915 MHz shield, on Ethernet.">
+  The router is wired, so the gateway will use Ethernet instead of Wi-Fi.
+  `firmware/gateway-eth.yaml` is its config and it compiles. The box on this page is
+  still drawn round the XIAO kit and gets redesigned round the T-ETH-Elite next. The
+  XIAO version (`gateway.yaml`) stays as the Wi-Fi fallback.
+</Callout>
+
 ## Only needed for LoRa
 
 **Remotes on Wi-Fi do not use the gateway.** Switch a remote to LoRa and it needs
@@ -71,6 +78,23 @@ of its own.**
 | Office temperature, Office humidity | From the SHT40, once a minute |
 | Last packet RSSI | Signal strength of the last packet heard, any sender |
 | Wi-Fi signal | Every five minutes |
+
+<details>
+<summary>The Ethernet board</summary>
+
+- **Board:** LilyGO T-ETH-Elite. ESP32-S3, W5500 10/100 Ethernet, and 802.3af PoE,
+  which the router (Firewalla Gold Pro) does not supply, so it runs on USB-C.
+- **Radio:** the LoRa shield with an SX1262 at 915 MHz (LilyGO H744-04-B). It is set
+  up like the Wio board: TCXO at 1.8 V, RF switch on DIO2. The remotes need no
+  change.
+- **Pins:** radio CS 40, RESET 46, BUSY 16, DIO1 8 on SPI 10 / 11 / 9. W5500 CS 45,
+  INT 14 on SPI 48 / 21 / 47, on the second SPI host (`interface: spi3`). SHT40 on
+  I2C 17 / 18, LED on 38 (polarity not checked). LilyGO's examples and Meshtastic's
+  `t-eth-elite` variant agree on these.
+- **Router port:** use a 2.5 Gb port or a switch. The W5500 only runs at 10/100,
+  and the Gold Pro's 10 Gb ports have not been checked at 100 Mb.
+
+</details>
 
 <details>
 <summary>Packets and the radio settings</summary>

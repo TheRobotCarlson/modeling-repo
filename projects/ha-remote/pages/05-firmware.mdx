@@ -17,7 +17,8 @@ straight to its registers from the MSA311 datasheet and are untested.
 | `common/motion.yaml` | The puck's accelerometer: double tap, and waking when moved |
 | `common/wifi.yaml` | Report over Wi-Fi and the native API (the default) |
 | `common/lora.yaml` | Report with one LoRa packet instead |
-| `gateway.yaml` | LoRa receiver on a third kit on USB power, with the office SHT40. See [gateway](../gateway/) |
+| `gateway-eth.yaml` | LoRa receiver on the LilyGO T-ETH-Elite over Ethernet, with the office SHT40: the chosen [gateway](../gateway/) |
+| `gateway.yaml` | The same on a third XIAO kit over Wi-Fi, as a fallback |
 
 ## Using it in Home Assistant
 
@@ -74,7 +75,7 @@ press. LoRa is fast and cheap per press, but needs a gateway.**
 
 | | Wi-Fi | LoRa |
 |---|---|---|
-| Extra hardware | None | A third kit, on USB, as the [gateway](../gateway/) |
+| Extra hardware | None | A [gateway](../gateway/) on Ethernet, in the office |
 | Press to event | ~2.5 s (EST) | Well under 1 s (EST) |
 | Charge per press | ~0.08 mAh | ~0.006 mAh |
 | Range | Your Wi-Fi | Whole house and garden |

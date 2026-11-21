@@ -125,8 +125,8 @@ def export(p):
     asm.add("dish", p["dish"], "Baking dish (yours)", color="#d8e6ef", source="bought", explode=(0, -80, 0),
             description="Any dish at least 320 x 170 mm and under 75 mm tall catches the cubes.",
             notes=["reference only"])
-    asm.add("berries", p["berries"], "Berries, tops off", color="#d63b3b", source="bought", layer="Berries",
-            description="Standing on their cut faces, ready to press.", notes=["reference only"])
+    asm.add("berries", p["berries"], "Berries, hulled", color="#d63b3b", source="bought", layer="Berries",
+            description="Leaves pinched off, dropped in any way up, ready to press.", notes=["reference only"])
     asm.export()
 
 

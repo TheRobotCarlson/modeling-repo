@@ -1,8 +1,7 @@
-"""How hard the press pushes, how much fruit the topping cut wastes, and the time it saves.
+"""How hard the press is to turn, and the time it saves over a knife.
 
 Berry shape (EST, from supermarket berries): width W 24 to 36 mm, length 1.1 to
-1.3 W. A blunt shoulder at the leafy end, a half spheroid of radius W/2 and depth
-0.6 W/2, then a cone to the tip.
+1.3 W.
 
 Cutting: a sharp edge going through strawberry flesh needs a force per millimetre
 of edge, K (EST, 0.1 N/mm; the measure page says how to weigh it on a kitchen
@@ -21,7 +20,7 @@ CELL = 12.0
 K = 0.10                    # N per mm of edge (EST)
 BATCH = 27                  # three rows of nine
 PINION_R = 8 * CELL / (2 * math.pi)
-HANDLE = 215.0              # knob radius on the manual press
+HANDLE = 215.0              # knob radius on the press
 EFF = 0.8                   # rack, pinion and stem friction (EST)
 SEED = 4
 
@@ -56,81 +55,36 @@ force = {f"K = {k:g} N/mm": [press_force(g, k) for g in gaps] for k in (0.05, 0.
 travel = 40 - gaps
 peak = max(force["K = 0.1 N/mm"])
 hand = peak * PINION_R / HANDLE / EFF
-# Automated press: two NEMA 17s on T8 lead screws. Thrust = 2 pi T eff / lead.
-T_MOTOR = 0.30              # N m each, usable at speed (EST: a 0.45 N m motor derated)
-MU = 0.15                   # nut friction, brass on stainless (EST)
-
-
-def screw_thrust(lead_mm, d_mm=8.0):
-    lam = math.atan(lead_mm / (math.pi * (d_mm - lead_mm / 2)))
-    eff = math.tan(lam) / math.tan(lam + math.atan(MU))
-    return 2 * 2 * math.pi * T_MOTOR * eff / (lead_mm / 1000)
-
-
-THRUST = {lead: round(screw_thrust(lead)) for lead in (2.0, 8.0)}
-print(f"  two motors: {THRUST[2.0]} N on 2 mm lead, {THRUST[8.0]} N on 8 mm lead")
-
 save_series("berry-dicer", "force", travel, force,
             title="Platen force, 27 berries lying in the hopper",
             x_label="Platen travel from the tallest berry, mm", y_label="Force, N",
             params={"berries": BATCH, "cell_mm": CELL, "K_N_per_mm": K, "peak_N": round(peak),
                     "peak_high_K_N": round(max(force["K = 0.2 N/mm"])),
-                    "thrust_2mm_lead_N": THRUST[2.0], "thrust_8mm_lead_N": THRUST[8.0],
                     "hand_N": round(hand, 1), "handle_mm": HANDLE, "ratio": round(HANDLE / PINION_R, 1)})
 print(f"  peak {peak:.0f} N at K={K}, hand {hand:.1f} N")
 
 
 
-# --- how much the topping cut takes ------------------------------------------------
-def shape_volume(w, length):
-    r, a = w / 2, 0.6 * w / 2
-    return 2 / 3 * math.pi * r * r * a + math.pi * r * r * (length - a) / 3
-
-
-def cap_volume(h, w):
-    """Volume within h of the leafy end: a slice of the blunt half spheroid."""
-    r, a = w / 2, 0.6 * w / 2
-    if h <= a:
-        return math.pi * r * r / (a * a) * h * h * (3 * a - h) / 3
-    return 2 / 3 * math.pi * r * r * a + math.pi * r * r * (h - a) * (1 - (h - a) / (3 * (length_of(w) - a)))
-
-
-def length_of(w):
-    return 1.2 * w
-
-
-caps = np.linspace(3, 10, 29)
-waste = {}
-for label, w in (("Small, 24 mm", 24.0), ("Medium, 30 mm", 30.0), ("Large, 36 mm", 36.0)):
-    waste[label] = [100 * cap_volume(h, w) / shape_volume(w, length_of(w)) for h in caps]
-save_series("berry-dicer", "waste", caps, waste,
-            title="Fruit lost with the top, by berry size",
-            x_label="Cut distance from the leafy end, mm", y_label="Lost, % of the berry",
-            params={"default_cut_mm": 5, "medium_at_5mm_pct": round(waste["Medium, 30 mm"][8], 1),
-                    "small_at_5mm_pct": round(waste["Small, 24 mm"][8], 1)})
-
-
 # --- time each week ----------------------------------------------------------------
 KNIFE_S = 10.0              # EST: hull and dice one berry on a board
-PLACE_S = 1.5               # EST: lay one berry in the topper tray
-ROW_S = 6.0                 # EST: swing the wire, flip the flap, tip the tray
+HULL_S = 2.0                # EST: pinch the leaves off and drop the berry in the hopper
 PRESS_S = 25.0              # EST: four clicks and sweeps, per batch
-CLEAN = {"knife": 60.0, "tools": 180.0}      # EST: rinse a board; load the parts in the dishwasher
+CLEAN = {"knife": 60.0, "press": 120.0}      # EST: rinse a board; load the cartridge in the dishwasher
 
 
 def week_minutes(n):
-    rows, batches = math.ceil(n / 9), math.ceil(n / BATCH)
     knife = KNIFE_S * n + CLEAN["knife"]
-    manual = PLACE_S * n + ROW_S * rows + PRESS_S * batches + CLEAN["tools"]
-    auto = PLACE_S * n + 2.0 * rows + CLEAN["tools"]
-    return knife / 60, manual / 60, auto / 60
+    press = HULL_S * n + PRESS_S * math.ceil(n / BATCH) + CLEAN["press"]
+    return knife / 60, press / 60
 
 
 ns = np.arange(10, 121, 5)
 mins = np.array([week_minutes(n) for n in ns])
+even = next(int(n) for n in range(1, 200) if week_minutes(n)[1] < week_minutes(n)[0])
 save_series("berry-dicer", "time", ns,
-            {"Knife and board": mins[:, 0], "Manual topper and press": mins[:, 1], "Automated": mins[:, 2]},
+            {"Knife and board": mins[:, 0], "Press": mins[:, 1]},
             title="Hands-on minutes per week", x_label="Berries per week", y_label="Minutes",
-            params={"knife_s_per_berry": KNIFE_S, "place_s": PLACE_S, "row_s": ROW_S, "press_s_per_batch": PRESS_S,
-                    "knife_60": round(week_minutes(60)[0], 1), "manual_60": round(week_minutes(60)[1], 1),
-                    "auto_60": round(week_minutes(60)[2], 1)})
+            params={"knife_s_per_berry": KNIFE_S, "hull_s_per_berry": HULL_S, "press_s_per_batch": PRESS_S,
+                    "knife_60": round(week_minutes(60)[0], 1), "press_60": round(week_minutes(60)[1], 1),
+                    "pays_back_above": even})
+print(f"  60 berries: knife {week_minutes(60)[0]:.1f} min, press {week_minutes(60)[1]:.1f} min; press wins from {even}")

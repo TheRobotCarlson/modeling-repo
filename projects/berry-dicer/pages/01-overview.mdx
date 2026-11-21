@@ -1,11 +1,11 @@
 ---
 title: Overview
-summary: Take the tops off a row at a time, then push a batch through a grid in 12 mm steps.
+summary: Pinch the leaves off, drop the berries in, push the batch through a grid in 12 mm steps.
 ---
 
-**Two steps, both done to many berries at once: a wire takes the same 5 mm off
-every leafy end, then a press pushes the batch through a stainless grid while a
-second wire cuts it off underneath every 12 mm.** Everything the fruit touches is
+**Pinch the leaves off each berry as you drop it in, then turn a handle: the press
+pushes the whole batch through a stainless grid, and a wire cuts it off underneath
+every 12 mm.** Everything the fruit touches is
 stainless steel and goes in the dishwasher. The printed PLA Pure is frame only.
 Modeled, not built.
 
@@ -35,7 +35,7 @@ Modeled, not built.
 <Stats>
   <Stat value="12 mm" label="cubes" />
   <Stat value="27" label="berries per press" />
-  <Stat value="~6.5 min" label="hands-on for 60 berries, manual (EST)" />
+  <Stat value="~5 min" label="hands-on for 60 berries (EST)" />
   <Stat value="0" label="printed parts touching fruit" />
 </Stats>
 
@@ -43,34 +43,35 @@ Modeled, not built.
 
 ## Why it works on strawberries
 
-**The awkward shape only matters for the top, and the top is measured from the
-leafy end.** Laid on their sides with the leafy end against a fence, big and small
-berries all lose 5 mm. Once the tops are off, which way up a berry lies makes no
-difference to the grid. Pushing it down 12 mm at a time and cutting underneath
-after each step gives cubes, not long sticks. See [how it cuts](./how-it-cuts/).
+**The awkward shape stops mattering once the leaves are off.** A hulled berry can
+land on its side, its tip or its cut face and the grid treats it the same. Pushing
+it down 12 mm at a time and cutting underneath after each step gives cubes, not
+long sticks. See [how it cuts](./how-it-cuts/).
 
-## Two builds
+## How you use it
 
-**A manual pair (a topper and a press) and an automated machine that does both, on
-the same stainless parts.**
+1. **Pinch the leaves off and drop the berry in the hopper**, about 2 s each (EST).
+   Up to 27 berries per batch.
+2. **Turn the handle one click, push the wire rod across.** Next click, pull it back.
+   A 30 mm berry takes three clicks.
+3. **Cubes land in a baking dish underneath.** The last layer stays in the grid until
+   the next batch pushes it out.
 
-| | Manual | Automated |
-|---|---|---|
-| Topping | Swing the wire arm, flip the fence, tip the tray | One button: servos do all three |
-| Dicing | Turn the handle a click, push the wire rod, repeat | Long press: lead screws and a belt |
-| Your hands | Lay berries in the tray, turn, push | Lay berries in the tray |
-| 60 berries a week | ~6.5 min (EST) | ~4.7 min (EST) |
-| Parts beyond the stainless | Printed frame, a spring plunger | Three steppers, three servos, a XIAO ESP32S3 |
-
-A knife and board is about 11 minutes for the same 60 (EST). Under about 20
-berries a week the knife wins, because the tools take longer to wash. See
+About 5 minutes for 60 berries a week, washing up included, against about 11 with
+a knife (EST). The press wins from about a dozen berries a week. See
 [time and force](./physics/).
+
+It is not only for strawberries: anything soft enough to push through by hand
+comes out as 12 mm cubes. See [what else it cuts](./how-it-cuts/#what-else-it-cuts).
 
 ## Where this stands
 
-1. **[How it cuts](./how-it-cuts/)**: the idea, and how much fruit the top takes.
-2. **[Topper](./topper/)**: manual, modeled.
-3. **[Press](./press/)**: manual, modeled.
-4. **[Automated](./automated/)**: modeled; firmware compiles, not run.
-5. **[Cleaning and food contact](./cleaning/)**: what touches the fruit and how it washes.
-6. **[What to measure](./measure/)**: the cutting force and the cut distance first.
+1. **[How it cuts](./how-it-cuts/)**: the grid, the step and the wire, and what else goes through.
+2. **[Press](./press/)**: modeled, not built.
+3. **[Time and force](./physics/)**: how hard the handle is, and the time saved.
+4. **[Cleaning and food contact](./cleaning/)**: what touches the fruit and how it washes.
+5. **[What to measure](./measure/)**: the cutting force first.
+6. **[Parts](./parts/)**: what to buy.
+
+An earlier version had a separate wire topper and an automated machine. They were
+dropped for hand hulling and the hand press; both are in the git history.

@@ -39,8 +39,8 @@ RIB_PEAK = 6.4              # rib height above the inside of the floor, at the m
 RIB_DIP = 4.8               # ... at the bottom of each scallop (may be a little lower)
 CELL_D = 10.5               # AAA
 RIB_W = 2 * CELL_D + 1.0    # EST: across, between the long ribs
-SUPPORTS = True             # side supports for the two holders, either side of the cells: PHOTO; height EST
-GUSSET_L = 6.0              # EST: triangle behind the back holder's middle peak, towards the cells
+SIDE_RIB_H = 1.9            # the long side ribs, and the front rib they meet
+GUSSET_L = 6.0              # EST: triangle under the back holder's middle peak (full height), towards the cells
 
 # --- latches ------------------------------------------------------------------------------
 TONGUE_W = 6.1
@@ -48,10 +48,10 @@ TONGUE_OUT = 6.3            # past the open end
 TONGUE_Z = 5.0              # outside of the floor to the lowest point of the tongue (the catch)
 TONGUE_T = 1.7              # at its tip, and in the gap
 TONGUE_PEAK = 3.0           # thickness at the catch: the ramp hangs below the tongue
-TONGUE_RIB = 1.2            # EST: the support running under the tongue, inside the cover, floor up to it
+TONGUE_RAIL = 1.0           # EST: the two supports under the tongue's edges, inside the cover, floor up to it
 TONGUE_GAP = 1.1            # open end to the catch face: the remote's wall goes here
-TONGUE_IN = 8.0             # PHOTO: how far inside the tongue runs, to the wall it hangs from
-ANCHOR_W = 29.0             # PHOTO: that wall, across
+TONGUE_IN = 8.0             # how far inside the tongue runs, to the front rib
+ANCHOR_W = 29.0             # PHOTO: the front rib, across; the side ribs meet it
 CORNER = 2.2                # blocks in the open end's corners, 2.2 square, top flush with the rim
 CORNER_OUT = 2.2            # ... sticking out past the open end
 CORNER_L = 5.5              # ... and 5.5 long in all, the rest inside for strength
@@ -72,8 +72,12 @@ def _rounded(w, l, h, sx, sy, sz):
     return b & Box(w, l, h, align=BASE)
 
 
+def envelope():
+    return _rounded(W, L, H, CURVE_SIDE, CURVE_END, H)
+
+
 def shell():
-    outer = _rounded(W, L, H, CURVE_SIDE, CURVE_END, H)
+    outer = envelope()
     # the inside: same curves, set in by the wall and floor, open at the top and the +Y end
     wi = W - 2 * T_SIDE
     inner = _rounded(wi, L, H, CURVE_SIDE - T_SIDE, CURVE_END - T_SIDE, H - T_FLOOR)
@@ -83,7 +87,8 @@ def shell():
 
 
 def cradle():
-    """Two cross ribs, scalloped for the cells, and the long ribs either side."""
+    """Two cross ribs, scalloped for the cells; the front rib; and the long side ribs, which run
+    from the front rib back into the closed end's curve."""
     z0 = T_FLOOR
     y_front = L / 2 - RIB_FRONT + RIB_T / 2          # its inside face (towards the cells) at RIB_FRONT
     y_back = L / 2 - (RIB_FRONT - RIB_T) - RIB_SPAN + RIB_T / 2
@@ -96,10 +101,13 @@ def cradle():
     for sx in (-1, 1):
         ribs -= Pos(sx * CELL_D / 2, (y_front + y_back) / 2, cz) * Rot(90, 0, 0) * Cylinder(
             CELL_D / 2, abs(y_front - y_back) + 4)
-    if SUPPORTS:
-        for sx in (-1, 1):
-            ribs += Pos(sx * (RIB_W + RIB_T) / 2, (y_front + y_back) / 2, z0) * Box(
-                RIB_T, abs(y_front - y_back) + RIB_T, RIB_DIP, align=BASE)
+    y_anchor = L / 2 - TONGUE_IN                     # the front rib's face towards the cells
+    ribs += Pos(0, y_anchor - RIB_T / 2, z0) * Box(ANCHOR_W, RIB_T, SIDE_RIB_H, align=BASE)
+    side_len = y_anchor - (-L / 2)
+    for sx in (-1, 1):
+        side = Pos(sx * (RIB_W + RIB_T) / 2, y_anchor - side_len / 2, z0) * Box(RIB_T, side_len, SIDE_RIB_H,
+                                                                               align=BASE)
+        ribs += side & envelope()                    # stops where it runs into the curve
     # the back holder's triangle, under its middle peak, sloping down towards the open end
     yb = y_back + RIB_T / 2
     tri = Polyline((yb, z0), (yb + GUSSET_L, z0), (yb, z0 + RIB_PEAK), close=True)
@@ -108,9 +116,9 @@ def cradle():
 
 
 def tongue():
-    """The latch: a plate hung from a cross wall inside, out past the open end. A ramp hangs below
-    it, from the tip down to a catch face TONGUE_GAP from the end. A rib runs under the plate
-    inside the cover."""
+    """The latch: a plate from the front rib out past the open end, on two supports under its edges
+    inside the cover. A ramp hangs below it, from the tip down to a catch face TONGUE_GAP from
+    the end."""
     y0 = L / 2
     top = TONGUE_Z + TONGUE_PEAK                     # the plate's top face
     zp = top - TONGUE_T                              # its underside
@@ -119,9 +127,10 @@ def tongue():
     a, b = y0 + TONGUE_GAP, y0 + TONGUE_OUT
     ramp = Polyline((a, zp), (a, TONGUE_Z), (b, zp), close=True)
     plate += extrude(Plane.YZ.offset(-TONGUE_W / 2) * make_face(ramp), TONGUE_W)
-    plate += Pos(0, y0 - TONGUE_IN / 2, T_FLOOR) * Box(TONGUE_RIB, TONGUE_IN, zp - T_FLOOR, align=BASE)
-    anchor = Pos(0, y0 - TONGUE_IN - RIB_T / 2, T_FLOOR) * Box(ANCHOR_W, RIB_T, top - T_FLOOR, align=BASE)
-    return plate + anchor
+    for sx in (-1, 1):
+        plate += Pos(sx * (TONGUE_W - TONGUE_RAIL) / 2, y0 - TONGUE_IN / 2, T_FLOOR) * Box(
+            TONGUE_RAIL, TONGUE_IN, zp - T_FLOOR, align=BASE)
+    return plate
 
 
 def hooks():

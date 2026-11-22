@@ -37,9 +37,12 @@ def plan():
     for y0, y1 in ((front_in, front_out), (back_out, back_in)):
         v.poly(rect(-xr, y0, xr, y1), "rib")
     for s in (-1, 1):
-        v.poly(rect(s * xl - C.RIB_T / 2, back_out, s * xl + C.RIB_T / 2, front_out), "guessed")
+        v.poly(rect(s * xl - C.RIB_T / 2, y_closed + T, s * xl + C.RIB_T / 2, anchor_y - C.RIB_T), "rib")
     tw = C.TONGUE_W / 2
     v.poly(rect(-tw, anchor_y, tw, y_open + C.TONGUE_OUT), "tongue")
+    for s_ in (-1, 1):                            # its two supports, under it
+        rx = s_ * (C.TONGUE_W - C.TONGUE_RAIL) / 2
+        v.poly(rect(rx - C.TONGUE_RAIL / 2, anchor_y, rx + C.TONGUE_RAIL / 2, y_open), "offcut")
     v.poly(rect(-C.ANCHOR_W / 2, anchor_y - C.RIB_T, C.ANCHOR_W / 2, anchor_y), "guessed")
     for s in (-1, 1):
         x0 = s * (W / 2 - T)
@@ -67,17 +70,20 @@ def plan():
                      "C2 says the curve ends 0.6 mm further in", round(back_out - y_closed, 1), "derived"))
     v.dim((-xr, front_in - 3), (xr, front_in - 3), f"R6 {C.RIB_W:.1f}",
           size("R6", "Cross ribs, length across", C.RIB_W, "photo / guess"))
-    v.tag((xl, -3), "L1", size("L1", f"Side supports for the two holders, either side of the cells: {C.RIB_T} "
-                                     f"thick, centred {xl:.1f} from the middle, {C.RIB_DIP} tall", C.RIB_DIP,
-                                     "photo / guess"), dx=6)
+    v.tag((xl, -3), "L1 L2", size("L1", "Long side ribs: height. They support both holders, run from the front "
+                                        "rib back into the closed end's curve", C.SIDE_RIB_H, "measured"), dx=6)
+    size("L2", f"Long side ribs: centre from the middle ({C.RIB_T} thick, just outside the holders)", round(xl, 1),
+                                     "photo / guess")
     v.dim((-tw, y_open + C.TONGUE_OUT + 2), (tw, y_open + C.TONGUE_OUT + 2), "T1 6.1",
           size("T1", "Tongue width", C.TONGUE_W, "measured"))
     v.dim((tw + 2, y_open), (tw + 2, y_open + C.TONGUE_OUT), "T2 6.3",
           size("T2", "Tongue: how far it sticks out past the open end", C.TONGUE_OUT, "measured"))
     v.dim((-C.ANCHOR_W / 2, anchor_y - 4), (C.ANCHOR_W / 2, anchor_y - 4), f"T8 {C.ANCHOR_W:g}",
-          size("T8", "The wall the tongue hangs from: width across", C.ANCHOR_W, "photo / guess"))
+          size("T8", "Front rib: width across. The side ribs meet it; 1.9 tall like L1", C.ANCHOR_W,
+               "photo / guess"))
     v.dim((-C.ANCHOR_W / 2 - 1, y_open), (-C.ANCHOR_W / 2 - 1, anchor_y), f"T7 {C.TONGUE_IN:g}",
-          size("T7", "Open end to the wall the tongue hangs from", C.TONGUE_IN, "photo / guess"))
+          size("T7", "Open end to the front rib, where the tongue and its supports end", C.TONGUE_IN,
+               "photo / guess"))
     kx = W / 2 - T - C.CORNER
     v.dim((kx - 1, y_open), (kx - 1, y_open + C.CORNER_OUT), "K1 2.2",
           size("K1", "Corner blocks: how far they stick out past the open end (2.2 square, top flush with the rim)",
@@ -105,8 +111,8 @@ def lengthwise():
         v.poly(rect(y0, F, y1, F + C.RIB_PEAK), "rib")
     a, b = y_open + C.TONGUE_GAP, y_open + C.TONGUE_OUT
     v.poly([(anchor_y, t_under), (a, t_under), (a, t_low), (b, t_under), (b, t_top), (anchor_y, t_top)], "tongue")
-    v.poly(rect(y_open - C.TONGUE_IN, F, y_open, t_under), "guessed")
-    v.poly(rect(anchor_y - C.RIB_T, F, anchor_y, t_top), "guessed")
+    v.poly(rect(y_open - C.TONGUE_IN, F, y_open, t_under), "offcut")
+    v.poly(rect(anchor_y - C.RIB_T, F, anchor_y, F + C.SIDE_RIB_H), "guessed")
     v.poly([(back_in, F), (back_in + C.GUSSET_L, F), (back_in, F + C.RIB_PEAK)], "guessed")
     v.poly(rect(y_closed + T, H - C.END_HOOK[2], y_closed + T + C.END_HOOK[1], H), "offcut")
 
@@ -122,7 +128,8 @@ def lengthwise():
     for yy, z, c in ((fy_end, -3, "m"), (back_out, -7, "d"), (front_out, -11, "m"), (front_in, -15, "m")):
         v.guide((yy, F), (yy, z), c)
     v.dim((front_out + 1.5, F), (front_out + 1.5, F + C.RIB_PEAK), "R4 6.4",
-          size("R4", "Cross rib height above the inside of the floor, at the middle peak", C.RIB_PEAK, "measured"))
+          size("R4", "Cross rib height above the inside of the floor, at the middle peak", C.RIB_PEAK, "measured"),
+          lab=(-26, 4))
     v.tag((front_in, F + C.RIB_PEAK), "R3 0.8", size("R3", "Cross rib thickness", C.RIB_T, "measured"),
           dx=-6, dy=-6, anchor="end")
     v.dim((b + 2, 0), (b + 2, t_low), "T3 5.0",
@@ -140,11 +147,15 @@ def lengthwise():
           size("T6", "Open end to the catch face: the gap the remote's wall drops into", C.TONGUE_GAP, "measured"),
           lab=(0, -6))
     v.tag((y_open - C.TONGUE_IN / 2, F), "T10",
-          size("T10", f"Support under the tongue, inside the cover: {C.TONGUE_RIB} wide, floor up to the tongue, "
-                      f"{C.TONGUE_IN:g} long", C.TONGUE_RIB, "photo / guess"), dx=0, dy=-14, anchor="middle")
+          size("T10", f"Two supports under the tongue's edges, inside the cover (dashed: either side of this cut): "
+                      f"{C.TONGUE_RAIL} thick each, floor up to the tongue", C.TONGUE_RAIL, "photo / guess"),
+          dx=0, dy=-14, anchor="middle")
+    v.dim((anchor_y - 3, 0), (anchor_y - 3, t_top), f"T11 {t_top:.1f}",
+          size("T11", "Outside of the floor to the top face of the tongue: T3 + T5", round(t_top, 1), "derived"),
+          lab=(-6, 4))
     v.tag((back_in + C.GUSSET_L, F), "G1",
           size("G1", f"Triangle support behind the back holder's middle peak: {C.RIB_T} thick, {C.GUSSET_L:g} long, "
-                     f"up to the peak", C.GUSSET_L, "photo / guess"), dx=2, dy=-4)
+                     f"reaching the full peak height (measured); length", C.GUSSET_L, "photo / guess"), dx=2, dy=-4)
     v.tag((y_closed + T + C.END_HOOK[1], H - C.END_HOOK[2]), "H2 3.9, H3 2.1 (dashed: 16 mm off this cut)", "m",
           dx=6, dy=4)
     size("H3", "Closed-end hooks: thickness, top flush with the rim", C.END_HOOK[2], "measured")
@@ -169,7 +180,7 @@ def across():
     v.poly(rib, "rib")
     for s in (-1, 1):
         v.poly(ellipse(s * r, cz, r, r, 0, 360, 60), "cell")
-        v.poly(rect(s * xl - C.RIB_T / 2, F, s * xl + C.RIB_T / 2, F + C.RIB_DIP), "guessed")
+        v.poly(rect(s * xl - C.RIB_T / 2, F, s * xl + C.RIB_T / 2, F + C.SIDE_RIB_H), "rib")
     v.dim((W / 2 - T, H + 1.5), (W / 2, H + 1.5), "S4 1.3",
           size("S4", "Long side wall at the rim", T, "measured"), lab=(10, 4))
     v.dim((W / 2, -2), (fx_side, -2), "C1 15.2", "m", lab=(0, 16))
@@ -179,7 +190,7 @@ def across():
     v.dim((0.4, F), (0.4, F + C.RIB_PEAK), "R4 6.4", "m")
     v.tag((r, cz + r), "AAA cells, dashed", "note", dx=40, dy=-4)
     size("R8", "Scallop shape: round, AAA size, so the cells sit in them", C.CELL_D, "photo / guess")
-    v.tag((xl, F + C.RIB_DIP), "L1", "g", dx=4, dy=-4)
+    v.tag((xl, F + C.SIDE_RIB_H), "L1", "m", dx=4, dy=-4)
     return v
 
 

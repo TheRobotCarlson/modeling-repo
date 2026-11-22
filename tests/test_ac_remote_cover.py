@@ -39,8 +39,17 @@ def test_tongue_meets_the_shell_without_overlap(parts):
 
 
 def test_cradle_ribs_are_where_measured():
-    # front rib's inside face, and the outside-to-outside span of the two ribs
-    r = C.cradle().bounding_box()
-    assert C.L / 2 - r.max.Y == pytest.approx(C.RIB_FRONT - C.RIB_T, abs=0.01)
-    assert r.max.Y - r.min.Y == pytest.approx(C.RIB_SPAN, abs=0.01)
-    assert r.max.Z - C.T_FLOOR == pytest.approx(C.RIB_PEAK, abs=0.01)
+    # a strip down the middle, above the side ribs, holds only the two battery holders (and G1)
+    from build123d import Box, Pos
+    strip = Pos(0, 0, C.T_FLOOR + C.SIDE_RIB_H + 0.1) * Box(0.2, C.L, C.H, align=C.BASE)
+    r = (C.cradle() & strip).bounding_box()
+    assert C.L / 2 - r.max.Y == pytest.approx(C.RIB_FRONT - C.RIB_T, abs=0.01)   # R1, to the inside face
+    assert r.max.Y - r.min.Y == pytest.approx(C.RIB_SPAN, abs=0.01)              # R2
+    assert r.max.Z - C.T_FLOOR == pytest.approx(C.RIB_PEAK, abs=0.01)            # R4
+
+
+def test_side_ribs_stay_inside_the_shell(parts):
+    from build123d import Box, Pos
+    past_open_end = Pos(0, C.L / 2 + 10, 0) * Box(C.W, 20, C.H, align=C.BASE)   # where the corner blocks go
+    outside = parts["cover"] - C.envelope() - past_open_end
+    assert outside is None or outside.volume < 0.01

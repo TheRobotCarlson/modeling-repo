@@ -66,7 +66,7 @@ def test_bins_are_gridfinity_size(models, name):
 
 # Items meant to stand proud of the part they sit in, by at least this much of their height.
 PROUD = {"airpods_case": 0.5, "grip_trainer": 0.6, "pen": 0.6, "brush": 0.6, "glasses_case": 0.6,
-         "metal_stick": 0.4}
+         "metal_stick": 0.4, "swiss_army_knife": 0.6, "leatherman": 0.6}
 
 
 def host(parts, item):

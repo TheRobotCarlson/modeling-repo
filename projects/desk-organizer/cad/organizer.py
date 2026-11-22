@@ -1,15 +1,17 @@
 """Desk organizer: three ways to hold the same things, from most modular to most compact.
 
-  modular   4 x 4 Gridfinity plate, four modules, three free cells      168 x 168 mm
-  combined  4 x 3 Gridfinity plate, three modules, one free cell        168 x 126 mm
-  block     one printed block, no grid                                  163 x 100 mm
+  modular   4 x 4 Gridfinity plate, five modules, two free cells        168 x 168 mm
+  combined  4 x 3 Gridfinity plate, four modules, no free cell          168 x 126 mm
+  block     one printed block, no grid                                  186 x 100 mm
 
 The pockets are the same in all three; only how they are grouped changes. Each
 pocket is the item plus FIT per side, shallow enough that most of the item stands
 proud. The USB stick and YubiKey drop into rounded basins instead. The pen, the
-brush and the metal stick live in the empty corners round the glasses case.
+brush and the metal stick live in the empty corners round the glasses case. The
+Swiss army knife and the Leatherman stand on their ends in a 1 x 1 bin.
 
-Item sizes: the user's, in inches, unless marked SOURCE or EST. The desk space is
+Item sizes: the user's, in inches (the two tools in mm, from calipers), unless marked
+SOURCE or EST. The desk space is
 at most 9 x 7 in.
 """
 
@@ -34,6 +36,10 @@ GLASSES_SIDE, GLASSES_L = 2.8 * IN, 155.0  # triangular case: side from the user
 USB = (0.7 * IN, 1.5 * IN, 8.0)            # thickness EST
 YUBIKEY = (0.5 * IN, 1.6 * IN, 3.3)        # thickness EST (YubiKey 5 NFC class)
 STICK_D, STICK_L = 0.2 * IN, 3 * IN        # taken as a round rod, stood upright
+SAK = (20.0, 23.0, 90.5)        # Swiss army knife, user's calipers: thick x wide x long; stood on its end
+LEATHERMAN = (13.6, 27.0, 101.8)           # user's calipers, the same way
+TOOL_R = (4.0, 3.0)             # EST: plan-view corner radii of the two, standing
+TOOL_DEPTH = 30.0
 
 # --- pockets, each centred on (x, y) of whatever it is cut into ------------------------
 # t is the top of the part the pocket is cut into, mm above its bottom.
@@ -84,6 +90,32 @@ def grip_pocket(x, y, depth, t):
     return cut, {"grip_trainer": Pos(x, y, t - depth) * Box(*GRIP, align=BASE)}
 
 
+def tools_pocket(x, y, t, across=True):
+    """Swiss army knife and Leatherman on their ends, side by side (across) or one behind the other."""
+    sw, lw = SAK[0] + 2 * FIT, LEATHERMAN[0] + 2 * FIT
+    sd, ld = SAK[1] + 2 * FIT, LEATHERMAN[1] + 2 * FIT
+    if across:
+        span = sw + 2.4 + lw
+        at = {"swiss_army_knife": (x - span / 2 + sw / 2, y), "leatherman": (x + span / 2 - lw / 2, y)}
+    else:
+        span = sd + 2.4 + ld
+        at = {"swiss_army_knife": (x, y - span / 2 + sd / 2), "leatherman": (x, y + span / 2 - ld / 2)}
+    cut, items = None, {}
+    for (key, size), r in zip((("swiss_army_knife", SAK), ("leatherman", LEATHERMAN)), TOOL_R):
+        px, py = at[key]
+        z = t - TOOL_DEPTH
+        c = Pos(px, py, z) * extrude(RectangleRounded(size[0] + 2 * FIT, size[1] + 2 * FIT, r + FIT),
+                                     TOOL_DEPTH + 5)
+        cut = c if cut is None else cut + c
+        body = Pos(px, py, z) * extrude(RectangleRounded(size[0], size[1], r), size[2])
+        items[key] = fillet(body.faces().sort_by(Axis.Z)[-1].edges(), r - 0.5)
+    return cut, items
+
+
+TOOLS_SPAN = SAK[0] + LEATHERMAN[0] + 4 * FIT + 2.4               # 38.4: inside a 1 x 1 bin (39.1)
+TOOLS_BOX = (SAK[0] + 2 * FIT, SAK[1] + LEATHERMAN[1] + 4 * FIT + 2.4)   # block: one behind the other
+
+
 BASIN_W, BASIN_GAP, BASIN_R_SIDE = 38.0, 3.5, 12.0
 
 
@@ -115,6 +147,10 @@ def _smalls_module(t):
     return basins(0, 0, inner(2) - 2.0, 13.0, t)
 
 
+def _tools_module(t):
+    return tools_pocket(0, 0, t)
+
+
 def _hub_module(t):
     """AirPods along the back, both basins in front: 2 x 2."""
     edge = inner(2) / 2
@@ -134,25 +170,29 @@ VARIANTS = {
             "glasses": ((2, 2, 5), (0, 1), _glasses_module),
             "smalls":  ((2, 2, 3), (2, 1), _smalls_module),
             "airpods": ((2, 1, 4), (0, 0), _airpods_module),
+            "tools":   ((1, 1, 6), (3, 3), _tools_module),
         },
-        free=[(3, 3), (2, 0), (3, 0)]),
+        free=[(2, 0), (3, 0)]),
     "combined": dict(
         title="Combined, 4 x 3", grid=(4, 3),
         modules={
             "grip":    ((3, 1, 6), (0, 2), _grip_module),
             "glasses": ((2, 2, 5), (0, 0), _glasses_module),
             "hub":     ((2, 2, 4), (2, 0), _hub_module),
+            "tools":   ((1, 1, 6), (3, 2), _tools_module),
         },
-        free=[(3, 2)]),
+        free=[]),
     "block": dict(title="One block", grid=None, modules={}, free=[]),
 }
 
-# --- one block: two bands. Back: grip and AirPods. Front: glasses group, then the basins.
+# --- one block: two bands. Back: grip and AirPods. Front: glasses group, the basins, then
+# the two tools one behind the other at the right-hand end.
 BLOCK_WALL, BLOCK_RIB, BLOCK_H, BLOCK_R = 2.0, 2.4, 35.0, 6.0
 BACK_D = GRIP[1] + 2 * FIT
 FRONT_D = GLASSES_BOX[1]
 BLOCK_W = math.ceil(max(2 * BLOCK_WALL + GRIP[0] + 2 * FIT + BLOCK_RIB + AIRPODS[0] + 2 * FIT,
-                        2 * BLOCK_WALL + GLASSES_BOX[0] + BLOCK_RIB + 2 * BASIN_W + BASIN_GAP))
+                        2 * BLOCK_WALL + GLASSES_BOX[0] + 2 * BLOCK_RIB + 2 * BASIN_W + BASIN_GAP
+                        + TOOLS_BOX[0]))
 BLOCK_D = math.ceil(2 * BLOCK_WALL + FRONT_D + BLOCK_RIB + BACK_D)
 
 
@@ -162,12 +202,14 @@ def block():
     x0, y0 = -w / 2 + BLOCK_WALL, -d / 2 + BLOCK_WALL
     yb = d / 2 - BLOCK_WALL - BACK_D / 2
     gw, aw = GRIP[0] + 2 * FIT, AIRPODS[0] + 2 * FIT
-    bx0, bx1 = x0 + GLASSES_BOX[0] + BLOCK_RIB, w / 2 - BLOCK_WALL
+    tx = w / 2 - BLOCK_WALL - TOOLS_BOX[0] / 2
+    bx0, bx1 = x0 + GLASSES_BOX[0] + BLOCK_RIB, tx - TOOLS_BOX[0] / 2 - BLOCK_RIB
     parts = [
         grip_pocket(x0 + gw / 2, yb, 30.0, t),
         airpods_pocket(w / 2 - BLOCK_WALL - aw / 2, yb, 20.0, t),
         glasses_group(x0 + GLASSES_BOX[0] / 2, y0 + FRONT_D / 2, t),
         basins((bx0 + bx1) / 2, y0 + FRONT_D / 2, FRONT_D, 15.0, t),
+        tools_pocket(tx, y0 + FRONT_D / 2, t, across=False),
     ]
     items = {}
     for cut, its in parts:
@@ -205,12 +247,15 @@ LABELS = {
     "airpods": ("AirPods dock, 2 x 1 x 4", "#3f9a96", "Case stands upright, 20 mm in the pocket."),
     "smalls": ("Smalls tray, 2 x 2 x 3", "#d0a03c", "Two rounded basins, 13 mm deep."),
     "hub": ("AirPods and smalls hub, 2 x 2 x 4", "#3f9a96", "AirPods along the back, two rounded basins in front."),
+    "tools": ("Tool stand, 1 x 1 x 6", "#7a6fa8",
+              "Swiss army knife and Leatherman on their ends, 30 mm deep, side by side."),
     "block": ("Organizer block", "#6c8f5a", "Everything in one 35 mm tall print, no grid."),
 }
 ITEM_NAMES = {
     "airpods_case": "AirPods 4 case", "grip_trainer": "Grip trainer (height EST)", "pen": "Pen (size EST)",
     "brush": "Keyboard brush", "glasses_case": "Glasses case (length EST)", "usb_stick": "USB stick",
     "yubikey": "YubiKey", "metal_stick": "Metal stick",
+    "swiss_army_knife": "Swiss army knife", "leatherman": "Leatherman",
 }
 
 

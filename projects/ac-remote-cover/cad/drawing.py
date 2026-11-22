@@ -21,7 +21,7 @@ back_out = front_out - C.RIB_SPAN                # back rib, face towards the cl
 back_in = back_out + C.RIB_T
 xr = C.RIB_W / 2
 xl = (C.RIB_W + C.RIB_T) / 2
-t_low, t_top = C.TONGUE_Z, C.TONGUE_Z + C.TONGUE_PEAK    # catch's lowest point; the plate's top
+t_low, t_top = C.TONGUE_TOP - C.TONGUE_PEAK, C.TONGUE_TOP  # catch's lowest point; the plate's top
 t_under = t_top - C.TONGUE_T                                # the plate's underside
 anchor_y = y_open - C.TONGUE_IN
 fx_side = W / 2 - C.CURVE_SIDE
@@ -95,8 +95,13 @@ def plan():
           y_closed + T + 5.9), "H1 5", size("H1", "Closed-end hooks: width", C.END_HOOK[0], "measured"))
     v.tag((C.END_HOOK_X, y_closed + T + C.END_HOOK[1]), "H2",
           size("H2", "Closed-end hooks: reach in from the end wall's inside", C.END_HOOK[1], "measured"), dx=-8, dy=-6)
-    v.dim((-C.END_HOOK_X, y_closed + 11), (0, y_closed + 11), f"H4 {C.END_HOOK_X}",
-          size("H4", "Middle to the centre of each closed-end hook", C.END_HOOK_X, "photo / guess"))
+    hin = C.END_HOOK_X - C.END_HOOK[0] / 2               # a hook's inner side, from the middle
+    v.dim((-W / 2, y_closed + 14), (-hin, y_closed + 14), "H4 10.5",
+          size("H4", "Inner side of a closed-end hook to the cover's outside edge (model: "
+                     f"{W / 2 - hin:.2f}, from H5 and H1)", C.END_HOOK_EDGE, "measured"))
+    v.dim((-C.END_HOOK_SPAN / 2, y_closed + 10.5), (C.END_HOOK_SPAN / 2, y_closed + 10.5), "H5 37.5",
+          size("H5", "Outer side of one closed-end hook to the outer side of the other", C.END_HOOK_SPAN,
+               "measured"))
     v.tag((-fx_side, fy_end), "floor flat inside the dashed line", "note", dx=-4, dy=16)
     return v
 
@@ -132,9 +137,9 @@ def lengthwise():
           lab=(-26, 4))
     v.tag((front_in, F + C.RIB_PEAK), "R3 0.8", size("R3", "Cross rib thickness", C.RIB_T, "measured"),
           dx=-6, dy=-6, anchor="end")
-    v.dim((b + 2, 0), (b + 2, t_low), "T3 5.0",
-          size("T3", "Outside of the floor to the tongue's lowest point, the bottom of the catch", C.TONGUE_Z,
-               "measured"), lab=(6, 16))
+    v.dim((b + 2, 0), (b + 2, t_low), f"T11 {t_low:.1f}",
+          size("T11", "Outside of the floor to the tongue's lowest point, the bottom of the catch: T3 - T5",
+               round(t_low, 1), "derived"), lab=(6, 16))
     v.guide((a, t_low), (b + 2.5, t_low), "m")
     v.dim((b + 0.4, t_under), (b + 0.4, t_top), "", "m")
     v.tag((b, t_top), "T4 1.7", size("T4", "Tongue thickness at the tip, and in the gap", C.TONGUE_T, "measured"),
@@ -146,13 +151,13 @@ def lengthwise():
     v.dim((y_open, t_top + 1.5), (a, t_top + 1.5), "T6 1.1",
           size("T6", "Open end to the catch face: the gap the remote's wall drops into", C.TONGUE_GAP, "measured"),
           lab=(0, -6))
-    v.tag((y_open - C.TONGUE_IN / 2, F), "T10",
+    v.tag((y_open - C.TONGUE_IN / 2, 0), "T10",
           size("T10", f"Two supports under the tongue's edges, inside the cover (dashed: either side of this cut): "
                       f"{C.TONGUE_RAIL} thick each, floor up to the tongue", C.TONGUE_RAIL, "photo / guess"),
-          dx=0, dy=-14, anchor="middle")
-    v.dim((anchor_y - 3, 0), (anchor_y - 3, t_top), f"T11 {t_top:.1f}",
-          size("T11", "Outside of the floor to the top face of the tongue: T3 + T5", round(t_top, 1), "derived"),
-          lab=(-6, 4))
+          dx=0, dy=16, anchor="middle")
+    v.dim((anchor_y - 3, 0), (anchor_y - 3, t_top), f"T3 {t_top:.1f}",
+          size("T3", "Outside of the floor to the top face of the tongue", C.TONGUE_TOP, "measured"), lab=(-6, 4))
+    v.guide((anchor_y, t_top), (anchor_y - 3.5, t_top), "m")
     v.tag((back_in + C.GUSSET_L, F), "G1",
           size("G1", f"Triangle support behind the back holder's middle peak: {C.RIB_T} thick, {C.GUSSET_L:g} long, "
                      f"reaching the full peak height (measured); length", C.GUSSET_L, "photo / guess"), dx=2, dy=-4)

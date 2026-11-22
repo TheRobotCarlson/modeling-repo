@@ -45,7 +45,7 @@ GUSSET_L = 6.0              # EST: triangle under the back holder's middle peak 
 # --- latches ------------------------------------------------------------------------------
 TONGUE_W = 6.1
 TONGUE_OUT = 6.3            # past the open end
-TONGUE_Z = 5.0              # outside of the floor to the lowest point of the tongue (the catch)
+TONGUE_TOP = 5.0            # outside of the floor to the top face of the tongue
 TONGUE_T = 1.7              # at its tip, and in the gap
 TONGUE_PEAK = 3.0           # thickness at the catch: the ramp hangs below the tongue
 TONGUE_RAIL = 1.0           # EST: the two supports under the tongue's edges, inside the cover, floor up to it
@@ -56,7 +56,9 @@ CORNER = 2.2                # blocks in the open end's corners, 2.2 square, top 
 CORNER_OUT = 2.2            # ... sticking out past the open end
 CORNER_L = 5.5              # ... and 5.5 long in all, the rest inside for strength
 END_HOOK = (5.0, 3.9, 2.1)  # closed end: width, reach in from the wall, thickness
-END_HOOK_X = 16.3           # PHOTO: each hook's centre from the middle
+END_HOOK_SPAN = 37.5        # outer side of one hook to the outer side of the other
+END_HOOK_EDGE = 10.5        # inner side of a hook to the cover's outside edge: a check, 10.55 from the others
+END_HOOK_X = END_HOOK_SPAN / 2 - END_HOOK[0] / 2     # each hook's centre from the middle
 
 
 def _rounded(w, l, h, sx, sy, sz):
@@ -120,12 +122,13 @@ def tongue():
     inside the cover. A ramp hangs below it, from the tip down to a catch face TONGUE_GAP from
     the end."""
     y0 = L / 2
-    top = TONGUE_Z + TONGUE_PEAK                     # the plate's top face
+    top = TONGUE_TOP                                 # the plate's top face
+    low = TONGUE_TOP - TONGUE_PEAK                   # the bottom of the catch
     zp = top - TONGUE_T                              # its underside
     plate = Pos(0, y0 + (TONGUE_OUT - TONGUE_IN) / 2, zp) * Box(TONGUE_W, TONGUE_OUT + TONGUE_IN, TONGUE_T,
                                                                 align=BASE)
     a, b = y0 + TONGUE_GAP, y0 + TONGUE_OUT
-    ramp = Polyline((a, zp), (a, TONGUE_Z), (b, zp), close=True)
+    ramp = Polyline((a, zp), (a, low), (b, zp), close=True)
     plate += extrude(Plane.YZ.offset(-TONGUE_W / 2) * make_face(ramp), TONGUE_W)
     for sx in (-1, 1):
         plate += Pos(sx * (TONGUE_W - TONGUE_RAIL) / 2, y0 - TONGUE_IN / 2, T_FLOOR) * Box(

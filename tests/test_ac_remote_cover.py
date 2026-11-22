@@ -30,7 +30,14 @@ def test_it_is_a_thin_shell(parts):
 def test_tongue_reaches_out_and_up_as_measured(parts):
     bb = parts["tongue"].bounding_box()
     assert bb.max.Y == pytest.approx(C.L / 2 + C.TONGUE_OUT, abs=0.01)
-    assert bb.max.Z == pytest.approx(C.TONGUE_Z + C.TONGUE_PEAK, abs=0.01)
+    assert bb.max.Z == pytest.approx(C.TONGUE_TOP, abs=0.01)
+    assert bb.min.Z == pytest.approx(C.T_FLOOR, abs=0.01)          # its supports stand on the floor
+
+
+def test_closed_end_hooks_match_both_measurements(parts):
+    # H5 builds them; H4 is a separate check that should agree to a tenth
+    assert C.END_HOOK_X + C.END_HOOK[0] / 2 == pytest.approx(C.END_HOOK_SPAN / 2)
+    assert C.W / 2 - (C.END_HOOK_X - C.END_HOOK[0] / 2) == pytest.approx(C.END_HOOK_EDGE, abs=0.1)
 
 
 def test_tongue_meets_the_shell_without_overlap(parts):

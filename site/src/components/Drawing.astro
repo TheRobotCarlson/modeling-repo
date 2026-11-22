@@ -1,0 +1,75 @@
+---
+// Labelled 2D drawing from lib/modelkit/drawing.py: each view as inline SVG, then a table of
+// every coded size. Colour says where a size came from: measured, photo or guess, or derived.
+import { projectOf, readData } from '../lib/site';
+
+interface View { title: string; viewBox: string; width: number; body: string }
+interface Size { code: string; what: string; mm: number | string; source: string }
+const { name, project, table = true } = Astro.props as { name: string; project?: string; table?: boolean };
+const d = readData<{ views: View[]; sizes: Size[] }>(projectOf(Astro, project), 'drawing', `${name}.json`);
+const cls: Record<string, string> = { measured: 'm', 'photo / guess': 'g', derived: 'd' };
+const markers = ['m', 'g', 'd'].map((c) =>
+  `<marker id="ar-${c}" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah ${c}" d="M0,2 L10,5 L0,8 z"/></marker>`).join('');
+---
+<div class="drawing">
+  <p class="drawing-key">
+    <span class="m">Blue: measured</span> · <span class="g">orange: read off a photo or guessed</span> ·
+    <span class="d">pink: worked out from other sizes</span>. Millimetres.
+  </p>
+  {d.views.map((v, i) => (
+    <figure class="drawing-view">
+      <figcaption>{i + 1}. {v.title}</figcaption>
+      <svg viewBox={v.viewBox} style={`max-width:${v.width}px`} role="img" aria-label={v.title}
+           set:html={`<defs>${markers}</defs>${v.body}`} />
+    </figure>
+  ))}
+  {table && (
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Code</th><th>What</th><th class="num">mm</th><th>Source</th></tr></thead>
+        <tbody>
+          {d.sizes.map((s) => (
+            <tr>
+              <td class={`mono code ${cls[s.source]}`}>{s.code}</td>
+              <td>{s.what}</td>
+              <td class="num">{s.mm === '' ? '—' : s.mm}</td>
+              <td class={cls[s.source]}>{s.source}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
+
+<style is:global>
+  .drawing { --d-m: var(--accent); --d-g: var(--warn-rule); --d-d: #b0247a; margin: 1.25rem 0; }
+  @media (prefers-color-scheme: dark) { .drawing { --d-d: #e07ab5; } }
+  .drawing .m { color: var(--d-m); }
+  .drawing .g { color: var(--d-g); }
+  .drawing .d { color: var(--d-d); }
+  .drawing .code { font-weight: 700; }
+  .drawing-key { font-size: 0.9rem; color: var(--ink-2); margin: 0 0 0.5rem; }
+  .drawing-view { margin: 0 0 1rem; padding: 0.75rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+  .drawing-view figcaption { font-size: 0.85rem; color: var(--ink-2); margin-bottom: 0.25rem; }
+  .drawing-view svg { display: block; width: 100%; height: auto; margin: 0 auto; overflow: visible; }
+  .drawing-view text { font: 600 12px var(--sans); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  .drawing-view text.note { fill: var(--ink-3); font-weight: 400; }
+  .drawing-view text.m { fill: var(--d-m); }
+  .drawing-view text.g { fill: var(--d-g); }
+  .drawing-view text.d { fill: var(--d-d); }
+  .drawing-view .ah.m { fill: var(--d-m); }
+  .drawing-view .ah.g { fill: var(--d-g); }
+  .drawing-view .ah.d { fill: var(--d-d); }
+  .drawing-view line.dim { stroke-width: 1.1; }
+  .drawing-view line.dim.m, .drawing-view line.guide.m { stroke: var(--d-m); }
+  .drawing-view line.dim.g, .drawing-view line.guide.g { stroke: var(--d-g); }
+  .drawing-view line.dim.d, .drawing-view line.guide.d { stroke: var(--d-d); }
+  .drawing-view line.guide { stroke-width: 0.6; stroke-dasharray: 2 2; }
+  .drawing-view .part { fill: var(--stage); stroke: var(--ink-2); stroke-width: 1.6; }
+  .drawing-view .inner { fill: none; stroke: var(--ink-3); stroke-width: 0.8; }
+  .drawing-view .flat, .drawing-view .cell { fill: none; stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 4 3; }
+  .drawing-view .rib, .drawing-view .tongue { fill: var(--accent-soft); stroke: var(--d-m); stroke-width: 1; }
+  .drawing-view .guessed { fill: var(--warn-bg); stroke: var(--d-g); stroke-width: 1; }
+  .drawing-view .offcut { fill: none; stroke: var(--d-m); stroke-width: 1; stroke-dasharray: 3 2; }
+</style>

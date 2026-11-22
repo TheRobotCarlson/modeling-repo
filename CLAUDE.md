@@ -10,3 +10,4 @@ Common workspace for hardware modeling projects; see README.md for layout and co
 - Page voice: one bold lead sentence per section, short paragraph, depth inside `<details>`. Say plainly what is modeled versus built or measured.
 - Part numbers go in `bom.yaml`; never invent an MPN — leave it empty and the site flags the row.
 - Charts: at most 3 series, one y axis; split otherwise.
+- Pair each 3D viewer with a labelled 2D drawing (`modelkit.drawing` → `<Drawing name=… />`): views with coded dimensions (S1, R2 …) and a table colour-coded measured / photo or guess / derived, built from the CAD module's constants. The user measures and reads back by code.

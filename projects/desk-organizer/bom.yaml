@@ -1,0 +1,22 @@
+# Bill of materials. Everything is printed except the optional feet. Leave
+# mpn/unit_cost empty until a real part is chosen; the site flags those rows.
+currency: USD
+items:
+  - ref: pla
+    description: PLA, 1 kg spool, any colour
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Your usual PLA, on hand. Nothing here touches food, so no special grade. About 300 to 400 g at 15 % infill (EST; the solid model is 950 g); one spool covers it with plenty spare.
+  - ref: feet
+    description: Clear self-adhesive rubber bumper feet, 8 mm or smaller, set of 8 or more
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Optional. Under the crossings of the baseplate webs (the outer rim is only 3 mm wide), or under the corners of the one-block version, so it does not slide on the desk. 75A TPU pads printed in place would do the same.

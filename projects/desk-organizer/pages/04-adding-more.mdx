@@ -1,0 +1,32 @@
+---
+title: Adding more
+summary: One free cell in the recommended layout; any Gridfinity bin, or a new module from the same code.
+---
+
+**The combined layout has one free cell at the back right, and a fifth column
+still fits the desk space.** Growing the plate from 4 × 3 to 5 × 3 makes it 210 mm
+(8.3 in) wide and adds three cells. The modular layout has three free cells. The
+one block has none.
+
+<details>
+<summary>Three ways to fill a cell</summary>
+
+1. **A ready-made Gridfinity bin.** Search Printables or MakerWorld for
+   "Gridfinity" and the thing (cable, SD card, earbuds, phone stand). Bins with or
+   without a stacking lip both fit.
+2. **A new module here.** In `cad/organizer.py`, add the item's size, a builder
+   that cuts its pocket from `bin_block(nx, ny, units)`, and an entry in `MODULES`
+   of the variant, with the free cell it takes. The tests check that it does not
+   overlap another module, that the item clears its pocket, and that everything
+   fits the desk space and the bed.
+3. **Rearrange.** A module's cell is one line in `MODULES`. Move a module into a
+   free cell, or mirror the layout if you are left-handed.
+
+</details>
+
+## Growing the plate
+
+**A second baseplate of any size sits beside the first.** Bins that straddle the
+seam hold the two together, as on any Gridfinity desk. The H3C prints up to 7 × 7
+cells (294 mm) in one plate. The desk space allows up to 5 × 4
+(210 × 168 mm). The plate size is the `grid` of the variant in `cad/organizer.py`.

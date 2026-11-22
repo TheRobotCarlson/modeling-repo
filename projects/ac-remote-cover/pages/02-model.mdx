@@ -1,0 +1,52 @@
+---
+title: The model
+summary: The cover in 3D, where each size came from, and how to print it.
+---
+
+**One printed part: the shell, the cradle ribs, the tongue and the hooks
+together.** The tongue is shown in blue and pulls apart on the slider so it is
+easy to see. It is printed as one piece with the shell.
+
+<ModelViewer assembly="cover" height={460} />
+
+## Every size, by code
+
+**Each size the model uses has a code, so a measurement can be read back as
+"R7 is 17.0".** Orange sizes are read off a photo or guessed, and are the ones
+worth measuring next. Pink ones are worked out from other sizes.
+
+<Drawing name="cover" />
+
+<details>
+<summary>Why R7 is pink</summary>
+
+R7, the closed end to the back rib, is not measured. It follows from the length
+(S1), the front rib's position (R1), the rib spacing (R2) and the rib thickness
+(R3): 16.6 mm. The curve at the closed end (C2) was measured to end at that rib,
+17.2 mm in. The two differ by 0.6 mm, so one of R1 or R2 may be to a different
+face of a rib than the model assumes. Measuring R7 directly settles it.
+
+</details>
+
+<details>
+<summary>Printing it</summary>
+
+- **Open side up,** like the photos. The flat part of the floor sits on the bed.
+  The curves underneath need supports: tree supports, touching the build plate
+  only.
+- **The tongue** bends about 1.3 mm to clear its ramp. On a 14 mm arm that is
+  about 2 % strain in the plastic (EST), which PLA takes but not many times over.
+  If it cracks, print it in PETG.
+- **Masses** in the parts table are for solid plastic. At 100 % infill, which a
+  part this thin effectively is, that is the real figure.
+
+</details>
+
+<details>
+<summary>Parts and downloads</summary>
+
+<PartsTable assembly="cover" />
+
+<Downloads assembly="cover" />
+
+</details>

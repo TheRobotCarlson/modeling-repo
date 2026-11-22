@@ -1,0 +1,13 @@
+# Bill of materials. Printed in one piece. Leave mpn/unit_cost empty until a real
+# part is chosen; the site flags those rows.
+currency: USD
+items:
+  - ref: pla
+    description: PLA, 1 kg spool, white or to match the remote
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Your usual PLA, on hand. About 9 g. PETG would bend further before the latch tongue snaps, if the tongue turns out to be the weak point.

@@ -189,8 +189,8 @@ def across():
     v.dim((W / 2 - T, H + 1.5), (W / 2, H + 1.5), "S4 1.3",
           size("S4", "Long side wall at the rim", T, "measured"), lab=(10, 4))
     v.dim((W / 2, -2), (fx_side, -2), "C1 15.2", "m", lab=(0, 16))
-    v.dim((-r, F), (-r, F + C.RIB_DIP), "R5 4.8",
-          size("R5", "Cross rib height at the bottom of each scallop (may be a little lower)", C.RIB_DIP, "measured"),
+    v.dim((-r, F), (-r, F + C.RIB_DIP), f"R5 {C.RIB_DIP}",
+          size("R5", "Cross rib height at the bottom of each scallop", C.RIB_DIP, "measured"),
           lab=(-4, 4))
     v.dim((0.4, F), (0.4, F + C.RIB_PEAK), "R4 6.4", "m")
     v.tag((r, cz + r), "AAA cells, dashed", "note", dx=40, dy=-4)

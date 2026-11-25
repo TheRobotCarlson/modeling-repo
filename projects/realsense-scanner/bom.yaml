@@ -1,0 +1,40 @@
+# Bill of materials. Leave mpn/unit_cost empty until a real part is chosen; the site
+# flags those rows as "to select".
+currency: USD
+items:
+  - ref: camera
+    description: Intel RealSense depth camera (model to confirm; D405 suits small objects)
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: On hand. Its model sets the camera arm's length.
+  - ref: motor
+    description: 28BYJ-48 stepper with ULN2003 driver board, for a motorised turntable
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Optional. Turning by hand works with Scantastic.
+  - ref: controller
+    description: ESP32 or Arduino board to step the turntable
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Optional, only with the motor.
+  - ref: pla
+    description: PLA for the turntable, platter and camera arm
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Your usual PLA, on hand.

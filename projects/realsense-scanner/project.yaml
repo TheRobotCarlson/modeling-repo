@@ -1,0 +1,4 @@
+title: RealSense 3D scanner
+summary: Turn an Intel RealSense depth camera into a tabletop scanner for small objects. Several people have built this already, so start from their work and only design the missing piece, a printed turntable and camera arm.
+status: concept   # concept | modeled | prototyped | tested
+order: 6          # position on the home page

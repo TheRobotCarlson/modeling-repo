@@ -1,0 +1,89 @@
+---
+title: Overview
+summary: What a RealSense scanner is, and the plan.
+---
+
+**Don't write a scanner from scratch: open-source RealSense scanners already exist, so use one and build only the turntable.**
+A RealSense camera measures depth at every pixel. If the object turns in front of a still
+camera, software can stitch those depth frames into one mesh you can print or measure.
+The hard part is the software, and other people have already written it.
+
+<Stats>
+  <Stat value="4" label="existing projects to start from" />
+  <Stat value="7–50 cm" label="D405 working range" />
+  <Stat value="0" label="parts designed yet" />
+</Stats>
+
+<Callout title="Research only, nothing modeled or built.">
+  This page collects other people's work. Nothing here has been tried with your camera yet,
+  and the camera model is still open (see below).
+</Callout>
+
+## Use these first
+
+**Scantastic is the closest to a finished tool; the Open3D pipeline is the one to script.**
+Try them in this order, and only move down the list if the one above it falls short.
+
+1. **[Scantastic](https://dev.to/open-madscience/scantastic-29bb)** (formerly "RealSense 3D Scanner").
+   A desktop app made for exactly this. It shows a live preview, scans while the object turns,
+   builds the mesh, and exports STL, OBJ or PLY. Its turntable mode is the recommended setup
+   for small objects: the camera stays on a stand and the object turns.
+2. **[Open3D's reconstruction system](https://www.open3d.org/docs/latest/tutorial/reconstruction_system/system_overview.html).**
+   It records RGB-D from a RealSense and fuses it into a mesh, and you run it from Python.
+   It is built for scanning rooms, so for one small object you'd tune the depth cutoff and
+   voxel size yourself.
+3. **[swag-scanner](https://github.com/seanngpack/swag-scanner)**, a C++ turntable scanner
+   built on librealsense, PCL and OpenCV, with a GUI.
+4. **[3D Printable 3D Scanner Using Intel RealSense D435](https://www.instructables.com/3D-Printable-3D-Scanner-Using-Intel-Realsense-D435)**:
+   a student build with an Arduino-driven stepper turntable, about €250 in all, mostly the camera.
+   Its printed parts, wiring and sketch are a ready-made starting point for the hardware.
+
+<details>
+<summary>Caveats on each</summary>
+
+- **Scantastic** labels itself a work in progress ("many features may be broken"). Its licence
+  is PolyForm Noncommercial: free for personal use, but not open source in the OSI sense.
+- **Open3D** reads the camera directly in version 0.12 and later, so you don't need a separate
+  RealSense SDK install. Its tutorial covers rooms, not objects.
+- **swag-scanner** has not been checked for recent upkeep.
+- **Commercial options** also support RealSense: RecFusion (turntable support; its Pro version
+  handles several cameras at once) and LIPScan 3D. The reviews I found are a few years old.
+- **librealsense** itself does not scan. Its `rs-kinfu` example fuses frames into a PLY and is
+  a useful test, but not a scanner.
+
+</details>
+
+## Which camera
+
+**For small objects the D405 fits best; the D415 and D435 are made for longer ranges.**
+The D405 works from about 7 to 50 cm and resolves detail under 1 mm at 7 cm. The D415 and
+D435 work best further back, so on a desk-sized turntable a small part fills less of the picture.
+
+<details>
+<summary>What trips scanners up</summary>
+
+- **Shiny or plain surfaces** give noisy depth. Users report trouble with 3D-printed parts and a
+  computer mouse. A light dusting of scanning spray, or a patterned mat under the object,
+  helps the software line frames up.
+- **Very close range:** with the "disparity shift" setting, users have measured the D405 down
+  to about 4 cm, closer than its rating.
+- **Fine detail:** the RealSense Viewer has a setting that keeps more fine detail but adds noise.
+  Try it only if edges come out soft.
+
+</details>
+
+## What this project would add
+
+**A printed turntable and camera arm sized to your camera, modeled here like the other projects.**
+Printed turntables with a 28BYJ-48 stepper and an ESP32 or Arduino are common on Printables and
+MakerWorld. The useful new part is a camera arm that holds the RealSense at a set distance and
+height. Fix that distance and the scanning software has less to work out.
+
+<details>
+<summary>Open questions before modeling</summary>
+
+- Which RealSense do you have (D405, D415, D435, D455, L515)? That sets the arm length.
+- How big is the largest thing to scan? That sets the platter size and the camera distance.
+- Manual turning is fine for Scantastic. A motor only matters for scanning without anyone there.
+
+</details>

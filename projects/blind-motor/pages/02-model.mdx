@@ -1,0 +1,54 @@
+---
+title: The model
+summary: The box, the lid and the sprocket, with every size coded for measuring.
+---
+
+**Three prints: a box that screws to the wall, a lid the motor bolts to, and a sprocket on the motor's shaft.**
+Drag to turn the model; the slider takes it apart. The chain is on its own layer.
+
+<ModelViewer assembly="box" height={560} />
+
+## Inside, bottom to top
+
+**Motor at the bottom so the sprocket sits low, cells at the top, boards beside the motor.**
+
+- **Gearbox and motor:** the gearbox's face bolts to the lid with two M3 screws, so the shaft is
+  always square to the lid. The motor can and its encoder stand up from the gearbox.
+- **Boards:** stand on edge in the gaps either side of the can. On the left are the XIAO and the
+  buck converter, on the right the motor driver.
+- **Cells:** two 18650s side by side on a printed floor, with a spring contact under and over each.
+- **Charger:** lies flat on top of the cells, its USB-C through the right-hand wall.
+- **Buttons:** two, up and down, poke through the top.
+
+<details>
+<summary>The sprocket</summary>
+
+12 pockets for #10 beads (4.5 mm on a 6 mm pitch) put the bead centres on an 11.59 mm radius,
+so one turn moves 72 mm of chain. A groove between the pockets takes the wire that joins the
+beads, and a flange each side keeps the chain on. The bore is D-shaped to the motor's shaft, with
+an M3 set screw down onto the flat.
+
+Print it first, on its own. If the beads ride up out of the pockets, the pocket or pitch is
+wrong for your chain: measure C1 and C2.
+
+</details>
+
+## Every size, by code
+
+<Drawing name="box" />
+
+<details>
+<summary>Which sizes matter most</summary>
+
+- **B4, where the chain runs.** The shade's chain hangs where it hangs; the box has to put
+  its sprocket on that line. A spacer behind the box can push it further out.
+- **M8 and M9, the shaft's height and the mounting holes.** No listing gives them. They set where
+  the lid's holes go, so measure them on the motor before printing the lid.
+- **M5, the motor can plus encoder.** Encoder caps vary. If it's longer than 42.8 mm, the box
+  grows by the difference.
+
+</details>
+
+## Downloads
+
+<Downloads assembly="box" />

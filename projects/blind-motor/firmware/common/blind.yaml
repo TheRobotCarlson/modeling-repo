@@ -1,37 +1,41 @@
-# Bead-chain blind motor: ESP32 dev board (WROOM-32), TMC2209 in STEP/DIR mode, NEMA 17,
-# 12-tooth sprocket on the shade's 6 mm-pitch bead chain. Adapted from
-# github.com/jamesrklau/bead-chain-blind-motor (MIT), with three changes:
-#   - EN on a pin, so the motor is only powered while moving (the shade's own clutch
-#     holds it), instead of always on and warm;
-#   - the open limit is set from Home Assistant ("Set open here") and survives reboots,
-#     instead of being a number compiled in;
-#   - one 12 V supply: a buck converter feeds the ESP32's 5V pin.
+# Blind motor: XIAO ESP32-C6, DRV8833 driver, JGY-370 worm gearmotor with a Hall encoder,
+# two 18650 cells (2S) charged over USB-C.
 #
-# Position is counted in steps; 0 = fully closed (down). There is no limit switch,
-# so if the chain is pulled by hand, press "Set closed here" with the shade down.
+# Position is the encoder count: 0 = fully closed (down), counting up as the shade
+# rises. The worm gear can't be turned from the chain, so the count only changes when
+# the motor runs, and the cells keep the ESP32 running through power cuts. The count
+# is also saved to flash, so even a flat battery only loses a move that was under way.
+#
+# If "up" goes down: swap in_up/in_down. If the count falls while it rises: swap enc_a/enc_b.
+
+substitutions:
+  enc_a: GPIO21          # D3
+  enc_b: GPIO22          # D4
+  in_up: GPIO19          # D8 -> DRV8833 AIN1
+  in_down: GPIO20        # D9 -> DRV8833 AIN2
+  drv_sleep: GPIO18      # D10 -> DRV8833 nSLEEP (high = awake)
+  btn_up: GPIO16         # D6, to ground
+  btn_down: GPIO17       # D7, to ground
+  vbat_pin: GPIO0        # D0, from a 100k / 33k divider on the battery
+  vbat_ratio: "4.03"     # (100 + 33) / 33
+  usb_pin: GPIO1         # D1, from a 100k / 100k divider on USB 5 V
+  slow_counts: "1500"    # slow to half speed this close to the target
 
 esphome:
   name: ${name}
   friendly_name: ${friendly_name}
-  on_boot:
-    priority: -100
-    then:
-      - stepper.report_position:
-          id: motor
-          position: !lambda "return id(saved_pos);"
-      - stepper.set_target:
-          id: motor
-          target: !lambda "return id(saved_pos);"
 
 esp32:
-  board: esp32dev
+  board: seeed_xiao_esp32c6
+  variant: esp32c6
   framework:
     type: esp-idf
 
 preferences:
-  flash_write_interval: 10s   # so a power cut soon after a move keeps the position
+  flash_write_interval: 10s   # the encoder count and settings reach flash within 10 s
 
 logger:
+  level: INFO                 # DEBUG would log every encoder count
 
 wifi:
   ssid: !secret wifi_ssid
@@ -53,28 +57,110 @@ ota:
   - platform: esphome
 
 globals:
-  - id: saved_pos             # where the shade is, in steps from closed
+  - id: open_counts           # count at fully open; 0 = not calibrated yet
     type: int
     restore_value: true
     initial_value: "0"
-  - id: open_steps            # steps from closed to fully open; set with "Set open here"
+  - id: target
     type: int
-    restore_value: true
-    initial_value: "30000"    # about 1.35 m of chain: a placeholder until calibrated
+    initial_value: "0"
+  - id: dir                   # +1 rising, -1 falling, 0 stopped
+    type: int
+    initial_value: "0"
+  - id: last_pos
+    type: int
+    initial_value: "0"
+  - id: last_move_ms
+    type: uint32_t
+    initial_value: "0"
+  - id: press_ms              # when a box button went down; 0 = that press only stopped it
+    type: uint32_t
+    initial_value: "0"
 
-stepper:
-  - platform: a4988           # the TMC2209 in STEP/DIR mode takes the same signals
-    id: motor
-    step_pin: GPIO18
-    dir_pin:
-      number: GPIO19
-      inverted: ${dir_inverted}
-    sleep_pin:                # TMC2209 EN is active low: on only while moving
-      number: GPIO21
-      inverted: true
-    max_speed: 600 steps/s    # ~27 mm of chain a second; lower it if the motor skips
-    acceleration: 300 steps/s^2
-    deceleration: 300 steps/s^2
+output:
+  - platform: ledc
+    id: out_up
+    pin: ${in_up}
+    frequency: 20000Hz        # above hearing
+  - platform: ledc
+    id: out_down
+    pin: ${in_down}
+    frequency: 20000Hz
+  - platform: gpio
+    id: drv_awake
+    pin: ${drv_sleep}
+
+number:
+  - platform: template
+    id: nudge
+    name: Nudge size
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    initial_value: 1000
+    min_value: 100
+    max_value: 50000
+    step: 100
+    unit_of_measurement: counts
+
+script:
+  - id: start_move
+    mode: restart
+    parameters:
+      tgt: int
+    then:
+      - lambda: |-
+          int pos = (int) id(enc).state;
+          id(target) = tgt;
+          if (tgt == pos) return;
+          id(dir) = tgt > pos ? 1 : -1;
+          id(last_pos) = pos;
+          id(last_move_ms) = millis();
+          id(jammed).publish_state(false);
+          id(drv_awake).turn_on();
+  - id: stop_motor
+    mode: restart
+    then:
+      - lambda: |-
+          id(dir) = 0;
+          id(out_up).set_level(1.0f);     // both high: brake
+          id(out_down).set_level(1.0f);
+      - delay: 200ms
+      - lambda: |-
+          if (id(dir) != 0) return;       // a new move started meanwhile
+          id(out_up).set_level(0.0f);
+          id(out_down).set_level(0.0f);
+          id(drv_awake).turn_off();
+
+interval:
+  - interval: 20ms
+    then:
+      - lambda: |-
+          if (id(dir) == 0) return;
+          int pos = (int) id(enc).state;
+          int left = (id(target) - pos) * id(dir);          // counts still to go
+          if (left <= 0) { id(stop_motor).execute(); return; }
+          if (pos != id(last_pos)) {
+            id(last_pos) = pos;
+            id(last_move_ms) = millis();
+          } else if (millis() - id(last_move_ms) > 800) {   // no counts for 0.8 s: stalled
+            ESP_LOGW("blind", "stalled at %d", pos);
+            id(jammed).publish_state(true);
+            id(stop_motor).execute();
+            return;
+          }
+          float duty = left < ${slow_counts} ? 0.5f : 1.0f;
+          id(out_up).set_level(id(dir) > 0 ? duty : 0.0f);
+          id(out_down).set_level(id(dir) < 0 ? duty : 0.0f);
+  - interval: 500ms
+    then:
+      - lambda: |-
+          auto op = id(dir) > 0 ? COVER_OPERATION_OPENING
+                  : id(dir) < 0 ? COVER_OPERATION_CLOSING : COVER_OPERATION_IDLE;
+          if (op != id(shade).current_operation) {
+            id(shade).current_operation = op;
+            id(shade).publish_state();
+          }
 
 cover:
   - platform: template
@@ -83,92 +169,154 @@ cover:
     device_class: shade
     has_position: true
     lambda: |-
-      if (id(open_steps) <= 0) return {};
-      return clamp((float) id(motor).current_position / id(open_steps), 0.0f, 1.0f);
+      if (id(open_counts) <= 0) return {};
+      return clamp(id(enc).state / id(open_counts), 0.0f, 1.0f);
     open_action:
-      - stepper.set_target:
-          id: motor
-          target: !lambda "return id(open_steps);"
+      - if:
+          condition:
+            lambda: "return id(open_counts) > 0;"
+          then:
+            - script.execute:
+                id: start_move
+                tgt: !lambda "return id(open_counts);"
+          else:
+            - logger.log: "Not calibrated: set closed and open first"
     close_action:
-      - stepper.set_target:
-          id: motor
-          target: 0
+      - script.execute:
+          id: start_move
+          tgt: 0
     stop_action:
-      - stepper.set_target:
-          id: motor
-          target: !lambda "return id(motor).current_position;"
+      - script.execute: stop_motor
     position_action:
-      - stepper.set_target:
-          id: motor
-          target: !lambda "return (int) (pos * id(open_steps));"
+      - script.execute:
+          id: start_move
+          tgt: !lambda "return (int) (pos * id(open_counts));"
 
-interval:
-  - interval: 1s
-    then:
+sensor:
+  - platform: rotary_encoder
+    id: enc
+    internal: true
+    pin_a:
+      number: ${enc_a}
+      mode: INPUT_PULLUP
+    pin_b:
+      number: ${enc_b}
+      mode: INPUT_PULLUP
+    resolution: 1
+    restore_mode: RESTORE_DEFAULT_ZERO
+  - platform: template
+    name: Position
+    entity_category: diagnostic
+    unit_of_measurement: counts
+    accuracy_decimals: 0
+    update_interval: 5s
+    lambda: "return id(enc).state;"
+  - platform: template
+    name: Open travel
+    entity_category: diagnostic
+    unit_of_measurement: counts
+    accuracy_decimals: 0
+    update_interval: 30s
+    lambda: "return id(open_counts);"
+  - platform: adc
+    name: Battery
+    pin: ${vbat_pin}
+    attenuation: 12db
+    device_class: voltage
+    entity_category: diagnostic
+    update_interval: 60s
+    filters:
+      - multiply: ${vbat_ratio}
+  - platform: wifi_signal
+    name: Wi-Fi signal
+    entity_category: diagnostic
+    update_interval: 60s
+
+binary_sensor:
+  - platform: template
+    id: jammed
+    name: Jammed
+    device_class: problem
+  - platform: gpio
+    name: On USB power
+    device_class: power
+    pin: ${usb_pin}
+  # The box's own buttons. Tap: all the way up or down. Hold: move while held.
+  # Any press while it is moving stops it.
+  - platform: gpio
+    id: up_button
+    internal: true
+    pin:
+      number: ${btn_up}
+      mode: INPUT_PULLUP
+      inverted: true
+    filters:
+      - delayed_on_off: 20ms
+    on_press:
       - lambda: |-
-          // Tell Home Assistant whether the shade is moving, and save the
-          // position once it stops.
-          auto *m = id(motor);
-          auto op = m->current_position == m->target_position ? COVER_OPERATION_IDLE
-                  : m->target_position > m->current_position ? COVER_OPERATION_OPENING
-                  : COVER_OPERATION_CLOSING;
-          if (op != id(shade).current_operation) {
-            id(shade).current_operation = op;
-            id(shade).publish_state();
-          }
-          if (op == COVER_OPERATION_IDLE && id(saved_pos) != m->current_position)
-            id(saved_pos) = m->current_position;
+          if (id(dir) != 0) { id(press_ms) = 0; id(stop_motor).execute(); return; }
+          id(press_ms) = millis();
+          id(start_move).execute((int) id(enc).state + 10000000);   // until released or stalled
+    on_release:
+      - lambda: |-
+          if (id(press_ms) == 0) return;
+          bool tap = millis() - id(press_ms) < 400;
+          id(press_ms) = 0;
+          if (tap && id(open_counts) > 0) id(start_move).execute(id(open_counts));
+          else id(stop_motor).execute();
+  - platform: gpio
+    id: down_button
+    internal: true
+    pin:
+      number: ${btn_down}
+      mode: INPUT_PULLUP
+      inverted: true
+    filters:
+      - delayed_on_off: 20ms
+    on_press:
+      - lambda: |-
+          if (id(dir) != 0) { id(press_ms) = 0; id(stop_motor).execute(); return; }
+          id(press_ms) = millis();
+          id(start_move).execute((int) id(enc).state - 10000000);
+    on_release:
+      - lambda: |-
+          if (id(press_ms) == 0) return;
+          bool tap = millis() - id(press_ms) < 400;
+          id(press_ms) = 0;
+          if (tap) id(start_move).execute(0);
+          else id(stop_motor).execute();
 
 button:
-  # Calibration: these move past the limits on purpose.
+  # Calibration (under the device's Configuration in Home Assistant).
   - platform: template
     name: Nudge up
     entity_category: config
     on_press:
-      - stepper.set_target:
-          id: motor
-          target: !lambda "return id(motor).current_position + 800;"   # half a sprocket turn
+      - script.execute:
+          id: start_move
+          tgt: !lambda "return (int) id(enc).state + (int) id(nudge).state;"
   - platform: template
     name: Nudge down
     entity_category: config
     on_press:
-      - stepper.set_target:
-          id: motor
-          target: !lambda "return id(motor).current_position - 800;"
+      - script.execute:
+          id: start_move
+          tgt: !lambda "return (int) id(enc).state - (int) id(nudge).state;"
   - platform: template
     name: Set closed here
     entity_category: config
     on_press:
-      - stepper.report_position:
-          id: motor
-          position: 0
-      - stepper.set_target:
-          id: motor
-          target: 0
-      - globals.set:
-          id: saved_pos
-          value: "0"
+      - sensor.rotary_encoder.set_value:
+          id: enc
+          value: 0
   - platform: template
     name: Set open here
     entity_category: config
     on_press:
       - globals.set:
-          id: open_steps
-          value: !lambda "return id(motor).current_position;"
+          id: open_counts
+          value: !lambda "return (int) id(enc).state;"
       - component.update: shade
   - platform: restart
     name: Restart
     entity_category: config
-
-sensor:
-  - platform: template
-    name: Open travel
-    entity_category: diagnostic
-    unit_of_measurement: steps
-    accuracy_decimals: 0
-    update_interval: 30s
-    lambda: "return id(open_steps);"
-  - platform: wifi_signal
-    name: Wi-Fi signal
-    entity_category: diagnostic
-    update_interval: 60s

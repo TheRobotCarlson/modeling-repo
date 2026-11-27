@@ -1,4 +1,4 @@
 title: Blind motor
-summary: A printed stepper motor that pulls each roller shade's bead chain, replacing the discontinued AXIS Gears. ESPHome over Wi-Fi, so Home Assistant sees each shade as a cover with a position slider.
+summary: A worm-gear motor with an encoder pulls each roller shade's bead chain, replacing the discontinued AXIS Gears. It always knows where the shade is, runs from two cells charged over USB-C, and joins Home Assistant through ESPHome.
 status: concept   # concept | modeled | prototyped | tested
 order: 2          # position on the home page, next to the blind guide

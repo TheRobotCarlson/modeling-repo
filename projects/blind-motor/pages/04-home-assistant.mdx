@@ -1,0 +1,134 @@
+---
+title: Home Assistant
+summary: The firmware, adding a shade, calibrating it, and automations.
+---
+
+**Each shade appears in Home Assistant as a cover, `cover.shade_1`, with open, close, stop and a position slider.**
+The configs are in
+[`projects/blind-motor/firmware`](https://github.com/TheRobotCarlson/modeling-repo/tree/main/projects/blind-motor/firmware)
+and use the same Wi-Fi and secrets layout as the [remotes](../../ha-remote/firmware/). They pass
+`esphome config` (ESPHome 2026.10) apart from the placeholder API key. They have not been
+compiled or run on hardware.
+
+| File | What it is |
+|---|---|
+| `shade-1.yaml`, `shade-2.yaml` | One per shade: name and IP address |
+| `common/blind.yaml` | Everything else: pins, the motor control, the cover, the buttons, calibration |
+| `secrets.example.yaml` | Copy to `secrets.yaml`: the same values as the remotes' |
+
+## What Home Assistant gets
+
+**A cover, plus a few sensors to see it's healthy.**
+
+| Entity | What it is |
+|---|---|
+| `cover.shade_1` | Open, close, stop, position 0–100 % |
+| Jammed | On if the motor stalled before reaching its target |
+| Battery | Cell voltage: 8.4 V full, about 6.4 V empty |
+| On USB power | Off during a power cut |
+| Position, Open travel | Encoder counts now, and at fully open (diagnostic) |
+| Nudge up / down, Nudge size, Set closed here, Set open here | Calibration (configuration) |
+
+## Adding a shade
+
+**Flash once over USB, then Home Assistant finds it on the network.**
+
+<details open>
+<summary>Steps</summary>
+
+1. Copy `secrets.yaml` from `projects/ha-remote/firmware/` (same Wi-Fi, same key) into
+   `projects/blind-motor/firmware/`, and give each shade a free IP address in its YAML.
+2. Check it: `esphome config shade-1.yaml`.
+3. With the XIAO on USB: `esphome run shade-1.yaml`. Later updates go over Wi-Fi.
+4. In Home Assistant, **Settings → Devices & services**: the shade shows up as discovered
+   under ESPHome. Add it and paste the API key from `secrets.yaml`.
+
+</details>
+
+## Calibrating
+
+**Show it closed and open once; the encoder does the rest.**
+
+<details open>
+<summary>Steps</summary>
+
+1. **Hold the box's down button** until the shade is fully down (it moves while held), then press
+   **Set closed here** in Home Assistant.
+2. **Hold the up button** until the shade is fully open, then press **Set open here**.
+3. Check direction first: if holding up moves it down, swap `in_up` and `in_down` in the YAML. If
+   **Position** falls as it rises, swap `enc_a` and `enc_b`.
+
+Until it's calibrated, Open and the slider do nothing; Close and the buttons still work.
+
+</details>
+
+<details>
+<summary>How it moves, and when it stops on its own</summary>
+
+- **Tap** a box button: all the way up or down. **Hold**: moves while held. **Any press while it's
+  moving** stops it.
+- It slows to half speed for the last 1,500 counts so it stops on the mark; the worm gear stops
+  it dead with no coasting back.
+- **If the count stops changing for 0.8 s** while it should be moving, the motor has stalled: the
+  shade has hit its top or something is caught. It stops and turns **Jammed** on.
+
+</details>
+
+## Automations
+
+**Ordinary cover actions, so anything that runs a light can run a shade.**
+
+<details>
+<summary>Close both at sunset</summary>
+
+```yaml
+triggers:
+  - trigger: sun
+    event: sunset
+actions:
+  - action: cover.close_cover
+    target:
+      entity_id: [cover.shade_1, cover.shade_2]
+```
+
+For one entity covering both, add a **Cover group** helper (Settings → Helpers → Group →
+Cover group).
+
+</details>
+
+<details>
+<summary>Toggle from the puck remote</summary>
+
+The [puck](../../ha-remote/firmware/) sends `esphome.remote_button`. A double tap on its case
+(button 2) can run the shades:
+
+```yaml
+triggers:
+  - trigger: event
+    event_type: esphome.remote_button
+    event_data:
+      remote: remote-puck
+      button: "2"
+actions:
+  - action: cover.toggle
+    target:
+      entity_id: [cover.shade_1, cover.shade_2]
+```
+
+</details>
+
+<details>
+<summary>Tell me if a shade jams or the power's out</summary>
+
+```yaml
+triggers:
+  - trigger: state
+    entity_id: [binary_sensor.shade_1_jammed, binary_sensor.shade_2_jammed]
+    to: "on"
+actions:
+  - action: notify.notify
+    data:
+      message: "{{ trigger.to_state.name }}: the motor stalled"
+```
+
+</details>

@@ -1,10 +1,9 @@
-# First shade. Change static_ip to a free address; set dir_inverted to "true" if
-# the shade goes the wrong way on the first test.
+# First shade. Change static_ip to a free address. Pins and directions are in
+# common/blind.yaml; override any of its substitutions here if this box is wired differently.
 substitutions:
   name: shade-1
   friendly_name: Shade 1
   static_ip: 192.168.1.61
-  dir_inverted: "false"
 
 packages:
   blind: !include common/blind.yaml

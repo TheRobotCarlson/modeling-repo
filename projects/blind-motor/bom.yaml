@@ -1,63 +1,90 @@
-# Bill of materials, per shade, from github.com/jamesrklau/bead-chain-blind-motor.
-# Leave mpn/unit_cost empty until a real part is chosen; the site flags those rows.
+# Bill of materials, per shade. Leave mpn/unit_cost empty until a real part is chosen; the
+# site flags those rows.
 currency: USD
 items:
-  - ref: board
-    description: ESP32 dev board, ESP32-WROOM-32
-    qty: 1
-    manufacturer: ""
-    mpn: ""
-    supplier: ""
-    url: ""
-    unit_cost:
-    notes: Any esp32dev-style board with GPIO18, 19 and 21 broken out.
-  - ref: driver
-    description: TMC2209 stepper driver module
-    qty: 1
-    manufacturer: BigTreeTech
-    mpn: ""
-    supplier: ""
-    url: ""
-    unit_cost:
-    notes: The original uses BTT's TMC2209 V1.3, in STEP/DIR mode.
-  - ref: driver-board
-    description: Stepper driver expansion board with 12 V screw terminal and motor socket
-    qty: 1
-    manufacturer: ""
-    mpn: ""
-    supplier: ""
-    url: ""
-    unit_cost:
-    notes: Takes the TMC2209 module. Saves soldering.
   - ref: motor
-    description: NEMA 17 stepper, 2 A, 48 mm body, 5 mm D-shaft
-    qty: 1
-    manufacturer: StepperOnline
-    mpn: 17HS19-2004S1
-    supplier: ""
-    url: ""
-    unit_cost:
-    notes: Run at about half current.
-  - ref: psu
-    description: 12 V DC wall adapter, at least 1.25 A
+    description: JGY-370 12 V worm gearmotor with Hall encoder, 30-60 rpm at 12 V, 6 mm D shaft
     qty: 1
     manufacturer: ""
     mpn: ""
     supplier: ""
     url: ""
     unit_cost:
-    notes: Plug cut off and wired to the expansion board's screw terminal.
+    notes: Sold under many names. Get the encoder version (six wires). Measure the shaft height and mounting holes (M8, M9) when it arrives.
+  - ref: board
+    description: Seeed XIAO ESP32-C6
+    qty: 1
+    manufacturer: Seeed Studio
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Wi-Fi now; Thread or Zigbee later for a battery-only version.
+  - ref: driver
+    description: DRV8833 dual H-bridge breakout
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: The chip is TI's DRV8833. Runs from 2.7 to 10.8 V, which suits two cells.
+  - ref: cells
+    description: 18650 Li-ion cell, flat top, protected or with a 2S BMS
+    qty: 2
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: In series, 6.0-8.4 V.
+  - ref: charger
+    description: 2-cell (2S, 8.4 V) Li-ion charger module with USB-C input
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Size in the model is a guess; pick one that fits 25 × 20 mm.
   - ref: buck
-    description: 12 V to 5 V buck converter module
+    description: Buck converter module, 6-8.4 V in, 5 V out
     qty: 1
     manufacturer: ""
     mpn: ""
     supplier: ""
     url: ""
     unit_cost:
-    notes: Powers the ESP32 from the same adapter.
+    notes: Feeds the XIAO's 5V pin.
+  - ref: contacts
+    description: 18650 spring and flat contacts
+    qty: 4
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: ""
+  - ref: buttons
+    description: 6 × 6 mm tactile switch, 7 mm stem or taller
+    qty: 2
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Up and down, through the top.
+  - ref: resistors
+    description: Resistors 100 k (3), 33 k (1)
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Battery and USB sensing dividers.
   - ref: screws
-    description: M3 × 6 (4, motor), M3 × 10 (5, lid), M3 set screw (sprocket), wall screws and anchors
+    description: M3 × 6 (2, gearbox to lid), M3 × 8 (2, lid to box), M3 set screw (sprocket), 2 wall screws
     qty: 1
     manufacturer: ""
     mpn: ""
@@ -66,7 +93,7 @@ items:
     unit_cost:
     notes: ""
   - ref: petg
-    description: PETG for the sprocket and case
+    description: PETG for the box, lid and sprocket
     qty: 1
     manufacturer: ""
     mpn: ""

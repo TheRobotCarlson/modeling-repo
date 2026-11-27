@@ -1,0 +1,68 @@
+---
+title: The build
+summary: Wiring, power, printing, and the designs this one borrows from.
+---
+
+**USB-C charges two cells; the cells run everything. The ESP32 drives the motor through a small driver and counts its encoder.**
+
+## Wiring
+
+**Nine signals to the XIAO, and one battery line feeding the driver and the buck converter.**
+
+| XIAO pin | To | Why |
+|---|---|---|
+| D8, D9 | DRV8833 AIN1, AIN2 | Motor up / down, PWM at 20 kHz |
+| D10 | DRV8833 nSLEEP | Driver off when idle |
+| D3, D4 | Encoder A, B (yellow, green) | Counts every motor turn |
+| 3V3, GND | Encoder power (blue +, black −) | The encoder runs on 3.3 V |
+| D6, D7 | Up and down buttons, to GND | The box's own buttons |
+| D0 | Battery, through 100 k / 33 k | Battery voltage |
+| D1 | USB 5 V, through 100 k / 100 k | "On USB power" |
+
+| Power | To |
+|---|---|
+| USB-C → 2-cell charger | Charges the cells |
+| Cells (6.0–8.4 V) | DRV8833 VM, and the buck converter's input |
+| Buck converter 5 V | XIAO 5V pin |
+| DRV8833 AOUT1, AOUT2 | Motor (red, white) |
+
+<details>
+<summary>Why these parts</summary>
+
+- **XIAO ESP32-C6:** small, with an antenna on the board. Its radio also does Thread and Zigbee,
+  for a battery-only version later.
+- **DRV8833:** runs from 2.7 to 10.8 V, which suits two cells (6.0–8.4 V). The common DRV8871 needs
+  6.5 V, more than nearly flat cells give.
+- **Two cells, not three:** they fit beside each other in a 44 mm wide box. The 12 V motor runs on
+  about 8 V at roughly two-thirds of its speed and torque, plenty for a shade by the listing's numbers.
+- **The motor's speed:** pick a 30–60 rpm version (at 12 V). At 40 rpm, the cells give about 27 rpm,
+  so about 32 mm of chain a second: a 1.4 m shade's chain in about 45 s.
+
+</details>
+
+<details>
+<summary>On battery alone</summary>
+
+The cells are a backup. With Wi-Fi always on, the ESP32 draws roughly a quarter of a watt, so two
+3,000 mAh cells (about 22 Wh) last 3–4 days without USB, about the length of a long power cut. A
+window with no outlet would need the radio to sleep: Thread or Zigbee on the C6, or a slower
+response to commands. That's a firmware change for later.
+
+</details>
+
+## Printing
+
+**PETG, 0.2 mm layers, 3 walls, 30–40% infill.** The box prints on its back, the lid flat, and the
+sprocket on its flange. Print the sprocket first and try it on the chain.
+
+## Designs considered
+
+**This design borrows the sprocket from one and the motor type from another.**
+
+| Design | Motor | Why not as-is |
+|---|---|---|
+| [bead-chain-blind-motor](https://github.com/jamesrklau/bead-chain-blind-motor) (GitHub) | NEMA 17 stepper, TMC2209 | It counts steps, so it can lose its place, and its motor is always powered. The sprocket is borrowed from it. |
+| [Minimalistic Motorized Roller Blinds](https://makerworld.com/en/models/213425) (MakerWorld) | NEMA 17, stall detection | Finds its ends by stalling, so it needs the driver's UART, which ESPHome lacks without an add-on. |
+| [Smart Roller Blind Motor](https://makerworld.com/en/models/3292116) (MakerWorld) | 12 V worm-gear motor | Same motor type as this one, but it only times the motor. |
+| [SmartBlinds Pro](https://makerworld.com/models/2217787) (MakerWorld) | 28BYJ-48 | Likely too weak for a full-size shade. |
+| [Geared brushless with encoder](https://makerworld.com/models/2995199) (MakerWorld) | Brushless with encoder | Closest in spirit; less documented. |

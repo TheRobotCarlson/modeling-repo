@@ -1,0 +1,85 @@
+# Bill of materials, per room. Leave mpn/unit_cost empty until a real part is chosen; the
+# site flags those rows as "to select".
+currency: USD
+items:
+  - ref: board
+    description: Seeed XIAO ESP32-C3
+    qty: 1
+    manufacturer: Seeed Studio
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Runs ESPHome. USB-C.
+  - ref: led
+    description: IR LED, 940 nm, 5 mm, ±17°
+    qty: 6
+    manufacturer: Vishay
+    mpn: TSAL6200
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Or TSAL6400 (±25°) for wider coverage. The count depends on the room.
+  - ref: led-r
+    description: Resistor, 33 Ω, one per LED
+    qty: 6
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: About 100 mA per LED at 5 V. Check against the LED's pulse rating.
+  - ref: fet
+    description: N-channel logic-level MOSFET, SOT-23
+    qty: 1
+    manufacturer: Alpha & Omega Semiconductor
+    mpn: AO3400A
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Switches all the LEDs from one GPIO pin.
+  - ref: rx
+    description: IR receiver, 38 kHz
+    qty: 1
+    manufacturer: Vishay
+    mpn: TSOP38238
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Learns codes from the existing remotes, and catches presses from them.
+  - ref: sensor
+    description: SHT40 temperature and humidity breakout
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Room temperature for the AC thermostat.
+  - ref: cap
+    description: Capacitor, 470 µF, across 5 V
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Covers the LEDs' pulses so the board's supply doesn't dip.
+  - ref: power
+    description: USB-C 5 V wall adapter and cable
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Any phone charger.
+  - ref: pla
+    description: PLA for the case; an IR-clear window over the LEDs
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Open holes over the LEDs are simplest. Dark PLA blocks visible light but some lets IR through. Worth a test print.

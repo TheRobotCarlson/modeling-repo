@@ -1,0 +1,97 @@
+---
+title: Overview
+summary: What the box does, what already exists, and the plan.
+---
+
+**One box per room, up high, sends IR in every direction, so Home Assistant can press any remote's buttons.**
+Inside are an ESP32 running ESPHome, a ring of infrared LEDs, an IR receiver that learns
+codes from your existing remotes, and a temperature sensor. The mini-split shows up in Home
+Assistant as a thermostat, and the TV and lights as buttons.
+
+<Stats>
+  <Stat value="1" label="box per room" />
+  <Stat value="3" label="kinds of device: AC, TV, lights" />
+  <Stat value="0" label="parts designed yet" />
+</Stats>
+
+<Callout title="A plan, nothing modeled or built.">
+  Brands, room layouts and mounting spots are still open. See the questions at the bottom.
+  The enclosure comes once those are settled.
+</Callout>
+
+## What already exists
+
+**IR blasters are common and cheap, so the case for building one rests on three things a store-bought one lacks.**
+
+- **Store-bought:** a Broadlink RM4 mini or a SwitchBot Hub Mini costs about $25–35 and works with
+  Home Assistant. But the AC appears only as buttons, not as a thermostat, and Broadlink's
+  setup wants its app and cloud account first.
+- **Printed DIY:** MakerWorld has a [customizable IR blaster case for the ESP32-C3 SuperMini](https://makerworld.com/en/models/1606154-customizable-ir-blaster-case-esp32-c3-supermini)
+  with an ESPHome config, and an [ESP-01 IR blaster](https://www.makerworld.com/en/models/2000408)
+  made for ACs whose Wi-Fi module died. GitHub has an
+  [IR sniffer and blaster](https://github.com/jimbottle/ir-sniffer-blaster) that records a remote and replays it.
+  Each has a single LED, good for one device it faces, not a whole room.
+
+What this build adds:
+
+1. **A real thermostat.** ESPHome's [IR climate](https://esphome.io/components/climate/climate_ir/) component
+   knows the full AC protocol for many mini-split brands, so Home Assistant gets a thermostat entity.
+   It can also take the room's temperature from the box's own sensor rather than the indoor unit's,
+   which reads hot air near the ceiling.
+2. **Whole-room coverage.** Several LEDs pointing different ways, so it reaches the AC, the TV and the
+   lights from one spot.
+3. **All local.** ESPHome, like the [remotes](../ha-remote/): no app, no cloud account.
+
+<details>
+<summary>How each device gets controlled</summary>
+
+- **Mini-split:** ESPHome's `climate_ir` platforms include Mitsubishi, Daikin, Fujitsu, LG, Toshiba,
+  Gree, Midea/Coolix, Panasonic and more, and `heatpumpir` adds dozens of others. An AC remote sends
+  the *whole* state (mode, setpoint, fan) every press, so the protocol has to be known. Recording single
+  buttons does not work well for an AC. The brand decides which platform.
+- **TV and lights:** these send one fixed code per button. The box's receiver logs each code it
+  sees (`remote_receiver` with `dump: all`). You press each button on the old remote once, paste
+  the codes into the config, and each becomes a button in Home Assistant.
+- **Feedback:** IR is one-way, so Home Assistant only assumes the device obeyed. If someone uses
+  the old remote, the receiver can catch that press, which keeps the AC thermostat in step.
+
+</details>
+
+## The box
+
+**A puck on the ceiling or the top of a shelf, LEDs round its rim and one pointing down.**
+IR bounces off walls and ceilings, so one bright box up high usually reaches everything in a room.
+
+<details>
+<summary>The electronics, first pass</summary>
+
+- **Board:** a Seeed XIAO ESP32-C3, small and on USB-C. (The remotes use the XIAO ESP32S3; the C3 is
+  enough here and cheaper.)
+- **LEDs:** five or six 940 nm IR LEDs. Vishay's TSAL6200 is bright with a narrow ±17° beam for
+  reach. The TSAL6400 (±25°) covers more angle per LED.
+- **Drive:** an ESP32 pin can't power LEDs this bright, so it switches a logic-level MOSFET (AO3400A).
+  At 5 V, a 33 Ω resistor per LED gives about 100 mA in each pulse. That figure is still to check
+  against the datasheet's pulse rating.
+- **Receiver:** a TSOP38238, 38 kHz, the carrier almost every remote uses. Its window must face out
+  and stay shaded from the box's own LEDs.
+- **Sensor:** an SHT40 in its own vented chamber, away from the board's heat, as in the
+  [gateway](../ha-remote/gateway/).
+- **Power:** a USB-C wall adapter. Pulses are short, so the average draw is small.
+
+</details>
+
+## Questions before modeling
+
+**Four answers set the design.**
+
+<details open>
+<summary>What I need from you</summary>
+
+1. **Mini-split brand and remote model.** The model number is usually on the back of the remote or
+   inside its battery cover. Is it the same remote as the [AC remote cover](../ac-remote-cover/)?
+2. **Rooms and mounting:** how many rooms, and ceiling, shelf top or wall?
+3. **TV brand**, and do the wall lights each have their own IR remote?
+4. **Power:** is there an outlet near where each box would go, or should it run from a USB port
+   or a power strip?
+
+</details>

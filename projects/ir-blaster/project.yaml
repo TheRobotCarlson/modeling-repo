@@ -1,0 +1,4 @@
+title: Room IR blaster
+summary: One small ESPHome box per room that sends infrared like a remote, so Home Assistant can run the mini-split, the TV and the IR wall lights. It learns codes from the existing remotes.
+status: concept   # concept | modeled | prototyped | tested
+order: 7          # position on the home page

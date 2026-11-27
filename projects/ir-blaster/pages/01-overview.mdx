@@ -4,9 +4,9 @@ summary: What the box does, what already exists, and the plan.
 ---
 
 **One box per room, up high, sends IR in every direction, so Home Assistant can press any remote's buttons.**
-Inside are an ESP32 running ESPHome, a ring of infrared LEDs, an IR receiver that learns
-codes from your existing remotes, and a temperature sensor. The mini-split shows up in Home
-Assistant as a thermostat, and the TV and lights as buttons.
+Inside are an ESP32 running ESPHome, a ring of infrared LEDs and a temperature sensor. The
+codes come from remotes already saved on your Flipper Zero. The TV and lights show up in Home
+Assistant as buttons, and the mini-split as presets or a full thermostat.
 
 <Stats>
   <Stat value="1" label="box per room" />
@@ -42,18 +42,55 @@ What this build adds:
    lights from one spot.
 3. **All local.** ESPHome, like the [remotes](../ha-remote/): no app, no cloud account.
 
-<details>
-<summary>How each device gets controlled</summary>
+## The codes come from the Flipper
 
-- **Mini-split:** ESPHome's `climate_ir` platforms include Mitsubishi, Daikin, Fujitsu, LG, Toshiba,
-  Gree, Midea/Coolix, Panasonic and more, and `heatpumpir` adds dozens of others. An AC remote sends
-  the *whole* state (mode, setpoint, fan) every press, so the protocol has to be known. Recording single
-  buttons does not work well for an AC. The brand decides which platform.
-- **TV and lights:** these send one fixed code per button. The box's receiver logs each code it
-  sees (`remote_receiver` with `dump: all`). You press each button on the old remote once, paste
-  the codes into the config, and each becomes a button in Home Assistant.
-- **Feedback:** IR is one-way, so Home Assistant only assumes the device obeyed. If someone uses
-  the old remote, the receiver can catch that press, which keeps the AC thermostat in step.
+**Every device already answers your Flipper Zero, so it is IR-controllable, and the Flipper's saved
+remotes become the box's buttons.** The Flipper stores each remote as a `.ir` text file. A short script
+can turn those files into ESPHome config, so no codes need learning a second time.
+
+<details>
+<summary>How a Flipper recording becomes an ESPHome button</summary>
+
+A Flipper `.ir` file holds one block per button, in one of two forms:
+
+- **Parsed:** the Flipper recognised the protocol and saved just the address and command, e.g.
+  `protocol: NEC`, `address: 04 00 00 00`, `command: 08 00 00 00`. This becomes ESPHome's
+  `remote_transmitter.transmit_nec` (or `_samsung`, `_rc5` …) with the same numbers. Most TVs and
+  cheap light remotes land here.
+- **Raw:** the Flipper saved the carrier frequency and the pulse timings in microseconds,
+  alternating on and off. That maps one-to-one onto `transmit_raw` with `carrier_frequency`: the
+  same list, with every second number made negative. AC remotes usually land here, as their
+  messages are long.
+
+Each block becomes a `button:` in Home Assistant named as on the Flipper ("TV Power", "Lights Dim").
+
+</details>
+
+<details>
+<summary>The mini-split: presets from the Flipper, or a full thermostat</summary>
+
+An AC remote doesn't send "temperature up". Every press sends the *whole* state: mode, setpoint,
+fan, swing. So a Flipper recording of one press always means exactly that state, e.g. "cool, 23°,
+fan auto". Two ways to use it:
+
+- **Presets, from the Flipper:** record the handful of states you actually use (off, cool 23, heat
+  20, dry) and each becomes a button or a scene. Simple, and works for any brand.
+- **Full thermostat:** if the brand has an ESPHome `climate_ir` platform (Mitsubishi, Daikin,
+  Fujitsu, LG, Toshiba, Gree, Midea/Coolix, Panasonic and more; `heatpumpir` adds dozens), Home
+  Assistant gets a real thermostat with any setpoint, driven by the box's own temperature sensor. The
+  Flipper recording helps here too: its timings identify the protocol.
+
+Start with presets; switch to the thermostat once the brand is known.
+
+</details>
+
+<details>
+<summary>Does the box still need a receiver?</summary>
+
+**Not to learn codes: the Flipper does that.** A receiver (a TSOP38238, under a dollar) is now only
+for one thing: catching presses from the old remotes, so Home Assistant knows someone turned the AC
+up by hand. IR is one-way, so without it Home Assistant assumes its last command still holds. It's
+cheap enough to keep a footprint for it and decide later.
 
 </details>
 
@@ -72,8 +109,9 @@ IR bounces off walls and ceilings, so one bright box up high usually reaches eve
 - **Drive:** an ESP32 pin can't power LEDs this bright, so it switches a logic-level MOSFET (AO3400A).
   At 5 V, a 33 Ω resistor per LED gives about 100 mA in each pulse. That figure is still to check
   against the datasheet's pulse rating.
-- **Receiver:** a TSOP38238, 38 kHz, the carrier almost every remote uses. Its window must face out
-  and stay shaded from the box's own LEDs.
+- **Receiver (optional):** a TSOP38238, 38 kHz, the carrier almost every remote uses. Only for
+  noticing the old remotes; the Flipper does the learning. Its window must face out and stay shaded
+  from the box's own LEDs.
 - **Sensor:** an SHT40 in its own vented chamber, away from the board's heat, as in the
   [gateway](../ha-remote/gateway/).
 - **Power:** a USB-C wall adapter. Pulses are short, so the average draw is small.
@@ -82,15 +120,17 @@ IR bounces off walls and ceilings, so one bright box up high usually reaches eve
 
 ## Questions before modeling
 
-**Four answers set the design.**
+**The Flipper files, plus three answers, set the design.**
 
 <details open>
 <summary>What I need from you</summary>
 
-1. **Mini-split brand and remote model.** The model number is usually on the back of the remote or
-   inside its battery cover. Is it the same remote as the [AC remote cover](../ac-remote-cover/)?
-2. **Rooms and mounting:** how many rooms, and ceiling, shelf top or wall?
-3. **TV brand**, and do the wall lights each have their own IR remote?
+1. **The Flipper `.ir` files** for each remote (on the SD card under `infrared/`). Drop them in
+   `projects/ir-blaster/ir/` and I'll write the script that turns them into ESPHome config.
+2. **Mini-split brand and remote model,** for the full-thermostat option. The model number is usually
+   on the back of the remote or inside its battery cover. Is it the same remote as the
+   [AC remote cover](../ac-remote-cover/)?
+3. **Rooms and mounting:** how many rooms, and ceiling, shelf top or wall?
 4. **Power:** is there an outlet near where each box would go, or should it run from a USB port
    or a power strip?
 

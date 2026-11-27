@@ -46,7 +46,7 @@ items:
     supplier: ""
     url: ""
     unit_cost:
-    notes: Learns codes from the existing remotes, and catches presses from them.
+    notes: Optional. The Flipper Zero supplies the codes; this only catches presses from the old remotes.
   - ref: sensor
     description: SHT40 temperature and humidity breakout
     qty: 1

@@ -1,0 +1,76 @@
+# Bill of materials, per shade, from github.com/jamesrklau/bead-chain-blind-motor.
+# Leave mpn/unit_cost empty until a real part is chosen; the site flags those rows.
+currency: USD
+items:
+  - ref: board
+    description: ESP32 dev board, ESP32-WROOM-32
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Any esp32dev-style board with GPIO18, 19 and 21 broken out.
+  - ref: driver
+    description: TMC2209 stepper driver module
+    qty: 1
+    manufacturer: BigTreeTech
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: The original uses BTT's TMC2209 V1.3, in STEP/DIR mode.
+  - ref: driver-board
+    description: Stepper driver expansion board with 12 V screw terminal and motor socket
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Takes the TMC2209 module. Saves soldering.
+  - ref: motor
+    description: NEMA 17 stepper, 2 A, 48 mm body, 5 mm D-shaft
+    qty: 1
+    manufacturer: StepperOnline
+    mpn: 17HS19-2004S1
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Run at about half current.
+  - ref: psu
+    description: 12 V DC wall adapter, at least 1.25 A
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Plug cut off and wired to the expansion board's screw terminal.
+  - ref: buck
+    description: 12 V to 5 V buck converter module
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: Powers the ESP32 from the same adapter.
+  - ref: screws
+    description: M3 × 6 (4, motor), M3 × 10 (5, lid), M3 set screw (sprocket), wall screws and anchors
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: ""
+  - ref: petg
+    description: PETG for the sprocket and case
+    qty: 1
+    manufacturer: ""
+    mpn: ""
+    supplier: ""
+    url: ""
+    unit_cost:
+    notes: On hand.

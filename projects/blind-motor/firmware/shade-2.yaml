@@ -1,0 +1,10 @@
+# Second shade. Change static_ip to a free address; set dir_inverted to "true" if
+# the shade goes the wrong way on the first test.
+substitutions:
+  name: shade-2
+  friendly_name: Shade 2
+  static_ip: 192.168.1.62
+  dir_inverted: "false"
+
+packages:
+  blind: !include common/blind.yaml

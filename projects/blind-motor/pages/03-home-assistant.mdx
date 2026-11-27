@@ -1,0 +1,128 @@
+---
+title: Home Assistant
+summary: The firmware, adding a shade, calibrating it, and automations.
+---
+
+**Each shade appears in Home Assistant as a cover, `cover.shade_1`, with open, close, stop and a position slider.**
+The configs are in
+[`projects/blind-motor/firmware`](https://github.com/TheRobotCarlson/modeling-repo/tree/main/projects/blind-motor/firmware).
+They are adapted from the original design's config, use the same Wi-Fi and secrets layout as the
+[remotes](../../ha-remote/firmware/), and have not yet run on hardware.
+
+| File | What it is |
+|---|---|
+| `shade-1.yaml`, `shade-2.yaml` | One per shade: name, IP address, direction |
+| `common/blind.yaml` | Everything else: the stepper, the cover, calibration buttons |
+| `secrets.example.yaml` | Copy to `secrets.yaml`: the same values as the remotes' |
+
+## Adding a shade
+
+**Flash once over USB, then Home Assistant finds it on the network.**
+
+<details open>
+<summary>Steps</summary>
+
+1. Copy `secrets.yaml` from `projects/ha-remote/firmware/` (same Wi-Fi, same key) into
+   `projects/blind-motor/firmware/`, and give each shade a free IP address in its YAML.
+2. Check it: `esphome config shade-1.yaml`.
+3. With the ESP32 on USB: `esphome run shade-1.yaml`. Later updates go over Wi-Fi.
+4. In Home Assistant, **Settings → Devices & services**: the shade shows up as discovered
+   under ESPHome. Add it and paste the API key from `secrets.yaml`.
+
+</details>
+
+## Calibrating
+
+**Tell it where closed and open are, once; it remembers both through power cuts.**
+There are no limit switches. The motor counts steps from closed, and the open point is stored
+on the ESP32.
+
+<details open>
+<summary>Steps</summary>
+
+1. Before hanging the chain on the sprocket, pull the shade fully down by hand.
+2. Hang the chain on the sprocket and press **Set closed here** (under the device's
+   Configuration).
+3. Press **Open**. It stops at a placeholder, about 1.35 m of chain. Use **Nudge up** and **Nudge
+   down** (half a sprocket turn each) until the shade is where you want fully open.
+4. Press **Set open here**. **Open travel** under Diagnostic shows the count it stored.
+
+If anyone pulls the chain by hand, the count is off: close it fully and press **Set closed
+here** again. A power cut mid-move does the same, as only stopped positions are saved.
+
+</details>
+
+## Automations
+
+**Ordinary cover actions, so anything that runs a light can run a shade.**
+
+<details>
+<summary>Close both at sunset</summary>
+
+```yaml
+triggers:
+  - trigger: sun
+    event: sunset
+actions:
+  - action: cover.close_cover
+    target:
+      entity_id: [cover.shade_1, cover.shade_2]
+```
+
+For one entity covering both, add a **Cover group** helper (Settings → Helpers → Group →
+Cover group).
+
+</details>
+
+<details>
+<summary>Toggle from the puck remote</summary>
+
+The [puck](../../ha-remote/firmware/) sends `esphome.remote_button`. A double tap on its case (button 2)
+can run the shades:
+
+```yaml
+triggers:
+  - trigger: event
+    event_type: esphome.remote_button
+    event_data:
+      remote: remote-puck
+      button: "2"
+actions:
+  - action: cover.toggle
+    target:
+      entity_id: [cover.shade_1, cover.shade_2]
+```
+
+</details>
+
+<details>
+<summary>Half-open for the afternoon sun</summary>
+
+```yaml
+actions:
+  - action: cover.set_cover_position
+    target:
+      entity_id: cover.shade_1
+    data:
+      position: 50
+```
+
+Position is the share of the chain travel, which is close to, but not exactly, the share of the
+window covered. The shade rolls onto a growing tube, so the first half of the chain moves it a
+little less.
+
+</details>
+
+<details>
+<summary>What the firmware changes from the original</summary>
+
+- **Motor off when idle:** the driver's EN pin is wired to GPIO21 and switched by ESPHome. The
+  original holds it on all the time, which keeps the motor warm.
+- **Open point set from Home Assistant:** the original compiles in the open count. Here
+  **Set open here** stores it on the ESP32, so calibrating needs no reflash.
+- **Moving state reported:** Home Assistant shows "opening" and "closing" while it runs, not just
+  where it ended up.
+- **Same network setup as the remotes:** fixed IP addresses, the encrypted API, and a fallback
+  hotspot if Wi-Fi is lost.
+
+</details>

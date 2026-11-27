@@ -1,0 +1,73 @@
+---
+title: Overview
+summary: A printed motor that pulls the shade's bead chain, to replace the discontinued AXIS Gears.
+---
+
+**A printed box on the wall pulls each shade's bead chain with a stepper motor, and Home Assistant sees the shade as a cover it can open, close or set to any height.**
+The AXIS Gear does the same: a motor in a box grips the looped chain and pulls it, as a hand
+would. It has been discontinued. This build uses an ESP32 running ESPHome, joining Home
+Assistant over Wi-Fi like the [remotes](../ha-remote/), with no cloud account.
+
+<Stats>
+  <Stat value="NEMA 17" label="stepper, TMC2209 driver" />
+  <Stat value="12 V" label="one wall adapter per shade" />
+  <Stat value="0" label="printed and tried" />
+</Stats>
+
+<Callout title="Picked and configured, not built.">
+  The design is someone else's, and its own case is marked "not yet test-printed". The
+  firmware is written but not yet run through ESPHome's config check, because that needs
+  your Wi-Fi and API key file. Nothing has been tried on your shades. The bead size and
+  how hard the shade pulls are not measured yet.
+</Callout>
+
+## The pick: bead-chain-blind-motor
+
+**[jamesrklau/bead-chain-blind-motor](https://github.com/jamesrklau/bead-chain-blind-motor) on GitHub: an ESP32, a TMC2209 driver and a NEMA 17 in a printed case.**
+Nothing on the shade changes: a printed 12-tooth sprocket grips the existing chain, and the
+case screws to the wall so the chain stays slightly taut around it. Chosen because:
+
+1. **It already runs ESPHome,** the same system as the remotes, so it needs no new software.
+2. **It's open:** MIT for the code, CC BY 4.0 for the 3D files, so the case can be redrawn
+   here, for example to stop the bottom bar catching (see [the guide](../blind-guide/guide/)).
+3. **NEMA 17, not a 28BYJ-48:** forum builders report the small motor stalls on full-size
+   shades.
+4. **It's the best documented** of the candidates: the parts, the wiring and a config are all
+   published.
+
+See [the build](./build/) for parts and wiring, and [Home Assistant](./home-assistant/) for
+the firmware and setup.
+
+<details>
+<summary>The other candidates, and why not them</summary>
+
+The MakerWorld pages refused automated reading, so these are from their listings only.
+
+| Design | Motor | Why not first |
+|---|---|---|
+| [Minimalistic Motorized Roller Blinds](https://makerworld.com/en/models/213425) (MakerWorld; also [Printables](https://www.printables.com/model/465889)) | NEMA 17, TMC2209 with stall detection | The strongest alternative. Its stall detection finds the end stops without counting, but needs the driver's UART link, which ESPHome doesn't support without an add-on. The author warns its pull may not suit every shade. |
+| [Smart Roller Blind Motor](https://makerworld.com/en/models/3292116) (MakerWorld) | 12 V worm-gear motor | Under $20, but it times the motor rather than counting steps, so the position drifts. |
+| [SmartBlinds Pro](https://makerworld.com/models/2217787) (MakerWorld) | 28BYJ-48 | USB-C and cheap, but likely too weak. |
+| [Geared brushless with encoder](https://makerworld.com/models/2995199) (MakerWorld) | Brushless gear motor | The encoder knows the position. Less documented. |
+| [Automatic Smart Roller Blinds Mod](https://makerworld.com/en/models/879069) (MakerWorld) | NEMA 17 | Means taking the shade's clutch apart. |
+
+</details>
+
+## What's still open
+
+**Three measurements, then a test print of the sprocket.**
+
+<details open>
+<summary>Before printing</summary>
+
+- **The bead chain:** the gap from one bead to the next (the sprocket is made for 6 mm) and the
+  bead diameter. The design ships a test plate with three pocket sizes, 4.4, 4.8 and 5.2 mm, to
+  find the one that grips.
+- **The pull:** hang a luggage scale on the chain and read how hard it pulls to lift the shade
+  from fully down. The motor (17HS19-2004S1) holds 0.59 Nm at its full 2 A. Run cooler at about
+  half current and moving, call it 0.2 Nm. At the sprocket's 11.5 mm radius that's about 1.7 kg
+  of pull. A rough estimate: the reading should be well under it.
+- **Power:** is there an outlet near each window? The AXIS Gear ran on a battery and solar panel;
+  this design needs a 12 V adapter.
+
+</details>

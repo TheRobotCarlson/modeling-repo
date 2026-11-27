@@ -1,0 +1,174 @@
+# Bead-chain blind motor: ESP32 dev board (WROOM-32), TMC2209 in STEP/DIR mode, NEMA 17,
+# 12-tooth sprocket on the shade's 6 mm-pitch bead chain. Adapted from
+# github.com/jamesrklau/bead-chain-blind-motor (MIT), with three changes:
+#   - EN on a pin, so the motor is only powered while moving (the shade's own clutch
+#     holds it), instead of always on and warm;
+#   - the open limit is set from Home Assistant ("Set open here") and survives reboots,
+#     instead of being a number compiled in;
+#   - one 12 V supply: a buck converter feeds the ESP32's 5V pin.
+#
+# Position is counted in steps; 0 = fully closed (down). There is no limit switch,
+# so if the chain is pulled by hand, press "Set closed here" with the shade down.
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    priority: -100
+    then:
+      - stepper.report_position:
+          id: motor
+          position: !lambda "return id(saved_pos);"
+      - stepper.set_target:
+          id: motor
+          target: !lambda "return id(saved_pos);"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+preferences:
+  flash_write_interval: 10s   # so a power cut soon after a move keeps the position
+
+logger:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  manual_ip:
+    static_ip: ${static_ip}
+    gateway: !secret gateway
+    subnet: !secret subnet
+    dns1: !secret gateway
+  ap: {}                      # fallback hotspot if Wi-Fi is lost
+
+captive_portal:
+
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  - platform: esphome
+
+globals:
+  - id: saved_pos             # where the shade is, in steps from closed
+    type: int
+    restore_value: true
+    initial_value: "0"
+  - id: open_steps            # steps from closed to fully open; set with "Set open here"
+    type: int
+    restore_value: true
+    initial_value: "30000"    # about 1.35 m of chain: a placeholder until calibrated
+
+stepper:
+  - platform: a4988           # the TMC2209 in STEP/DIR mode takes the same signals
+    id: motor
+    step_pin: GPIO18
+    dir_pin:
+      number: GPIO19
+      inverted: ${dir_inverted}
+    sleep_pin:                # TMC2209 EN is active low: on only while moving
+      number: GPIO21
+      inverted: true
+    max_speed: 600 steps/s    # ~27 mm of chain a second; lower it if the motor skips
+    acceleration: 300 steps/s^2
+    deceleration: 300 steps/s^2
+
+cover:
+  - platform: template
+    id: shade
+    name: None                # the entity takes the device's name: cover.shade_1
+    device_class: shade
+    has_position: true
+    lambda: |-
+      if (id(open_steps) <= 0) return {};
+      return clamp((float) id(motor).current_position / id(open_steps), 0.0f, 1.0f);
+    open_action:
+      - stepper.set_target:
+          id: motor
+          target: !lambda "return id(open_steps);"
+    close_action:
+      - stepper.set_target:
+          id: motor
+          target: 0
+    stop_action:
+      - stepper.set_target:
+          id: motor
+          target: !lambda "return id(motor).current_position;"
+    position_action:
+      - stepper.set_target:
+          id: motor
+          target: !lambda "return (int) (pos * id(open_steps));"
+
+interval:
+  - interval: 1s
+    then:
+      - lambda: |-
+          // Tell Home Assistant whether the shade is moving, and save the
+          // position once it stops.
+          auto *m = id(motor);
+          auto op = m->current_position == m->target_position ? COVER_OPERATION_IDLE
+                  : m->target_position > m->current_position ? COVER_OPERATION_OPENING
+                  : COVER_OPERATION_CLOSING;
+          if (op != id(shade).current_operation) {
+            id(shade).current_operation = op;
+            id(shade).publish_state();
+          }
+          if (op == COVER_OPERATION_IDLE && id(saved_pos) != m->current_position)
+            id(saved_pos) = m->current_position;
+
+button:
+  # Calibration: these move past the limits on purpose.
+  - platform: template
+    name: Nudge up
+    entity_category: config
+    on_press:
+      - stepper.set_target:
+          id: motor
+          target: !lambda "return id(motor).current_position + 800;"   # half a sprocket turn
+  - platform: template
+    name: Nudge down
+    entity_category: config
+    on_press:
+      - stepper.set_target:
+          id: motor
+          target: !lambda "return id(motor).current_position - 800;"
+  - platform: template
+    name: Set closed here
+    entity_category: config
+    on_press:
+      - stepper.report_position:
+          id: motor
+          position: 0
+      - stepper.set_target:
+          id: motor
+          target: 0
+      - globals.set:
+          id: saved_pos
+          value: "0"
+  - platform: template
+    name: Set open here
+    entity_category: config
+    on_press:
+      - globals.set:
+          id: open_steps
+          value: !lambda "return id(motor).current_position;"
+      - component.update: shade
+  - platform: restart
+    name: Restart
+    entity_category: config
+
+sensor:
+  - platform: template
+    name: Open travel
+    entity_category: diagnostic
+    unit_of_measurement: steps
+    accuracy_decimals: 0
+    update_interval: 30s
+    lambda: "return id(open_steps);"
+  - platform: wifi_signal
+    name: Wi-Fi signal
+    entity_category: diagnostic
+    update_interval: 60s
